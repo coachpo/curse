@@ -3,7 +3,7 @@
 # Set variables for reuse
 VOLUME_NAME="portainer_data"
 CONTAINER_NAME="portainer"
-IMAGE_NAME="portainer/portainer-ce"
+IMAGE_NAME="portainer/portainer-ce:2.21.0"
 HOST_PORT="9000"
 SSL_PORT="9443"
 DOCKER_SOCK="/var/run/docker.sock"
