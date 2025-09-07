@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  # Bark Server - iOS push notification service
+  bark:
+    image: finab/bark-server:latest
+    container_name: bark
+    restart: unless-stopped
+    ports:
+      - "8087:8080"
+    networks:
+      - bark-network
+
+networks:
+  bark-network:
+    driver: bridge
