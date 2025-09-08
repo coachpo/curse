@@ -1,0 +1,40 @@
+version: 0.1
+log:
+  level: warn
+  fields:
+    service: local-cache-registry
+    environment: local-cache
+storage:
+  filesystem:
+    rootdirectory: /var/lib/registry
+    maxthreads: 100
+  cache:
+    blobdescriptor: inmemory
+  delete:
+    enabled: true
+  maintenance:
+    uploadpurging:
+      enabled: true
+      age: 168h
+      interval: 24h
+      dryrun: false
+http:
+  addr: :5000
+  relativeurls: false
+  draintimeout: 60s
+  headers:
+    X-Content-Type-Options: [nosniff]
+    Access-Control-Allow-Origin: ['*']
+    Access-Control-Allow-Methods: ['HEAD', 'GET', 'OPTIONS', 'DELETE', 'POST', 'PUT', 'PATCH']
+    Access-Control-Allow-Headers: ['Authorization', 'Accept', 'Cache-Control', 'X-Requested-With', 'Content-Type']
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3
+# Cache/Transit hub optimizations
+proxy:
+  remoteurl: https://registry-1.docker.io
+  username: ""
+  password: ""
+  ttl: 168h
