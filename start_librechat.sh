@@ -3,6 +3,13 @@
 # Start LibreChat using Docker Compose
 echo "Starting LibreChat using Docker Compose..."
 
+# Check if env file exists
+if [ ! -f "librechat-config/env" ]; then
+    echo "Error: Environment file 'librechat-config/env' not found!"
+    echo "Please make sure the env file exists in the librechat-config directory."
+    exit 1
+fi
+
 # Create directories for LibreChat data and logs if they don't exist
 mkdir -p librechat_data librechat_logs
 
