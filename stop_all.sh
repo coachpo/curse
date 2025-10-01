@@ -11,4 +11,8 @@ docker compose -f docker-compose.portainer.yml down
 echo "Stopping Bark..."
 docker compose -f docker-compose.bark.yml down
 
+# Stop LibreChat
+echo "Stopping LibreChat..."
+docker compose -f docker-compose.librechat.yml down
+
 echo "All services have been stopped."

@@ -1,0 +1,53 @@
+services:
+  # LibreChat - AI Chat Interface
+  librechat:
+    image: ghcr.io/danny-avila/librechat:latest
+    container_name: librechat
+    restart: unless-stopped
+    ports:
+      - "3080:3080"
+    environment:
+      - HOST=0.0.0.0
+      - MONGO_URI=mongodb://mongodb:27017/LibreChat
+      - MEILI_HOST=http://meilisearch:7700
+      - MEILI_NO_ANALYTICS=true
+    volumes:
+      - ./librechat_data:/app/client/public/images
+      - ./librechat_logs:/app/api/logs
+    depends_on:
+      - mongodb
+      - meilisearch
+    networks:
+      - librechat-network
+
+  # MongoDB for LibreChat
+  mongodb:
+    image: mongo:latest
+    container_name: librechat-mongodb
+    restart: unless-stopped
+    volumes:
+      - librechat_mongodb_data:/data/db
+    networks:
+      - librechat-network
+
+  # Meilisearch for LibreChat
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: librechat-meilisearch
+    restart: unless-stopped
+    environment:
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_HOST=http://0.0.0.0:7700
+    volumes:
+      - librechat_meilisearch_data:/meili_data
+    networks:
+      - librechat-network
+
+volumes:
+  librechat_mongodb_data:
+  librechat_meilisearch_data:
+
+networks:
+  librechat-network:
+    driver: bridge
+
