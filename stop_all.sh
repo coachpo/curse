@@ -13,6 +13,10 @@ docker compose -f docker-compose.bark.yml down
 
 # Stop LibreChat
 echo "Stopping LibreChat..."
-docker compose -f docker-compose.librechat.yml down
+if [ -d "LibreChat" ]; then
+    cd LibreChat
+    docker compose down
+    cd ..
+fi
 
 echo "All services have been stopped."

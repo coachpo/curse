@@ -1,0 +1,6 @@
+# LibreChat cloned repository
+LibreChat/
+
+# Docker volumes and data
+portainer_data/
+
