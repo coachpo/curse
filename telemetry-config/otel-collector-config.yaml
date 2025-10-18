@@ -29,7 +29,7 @@ processors:
   resource:
     attributes:
       - key: service.name
-        value: curse
+        value: meltica
         action: upsert
       - key: deployment.environment
         value: development
@@ -51,7 +51,7 @@ exporters:
   # Prometheus exporter for metrics with exemplar support
   prometheus:
     endpoint: "0.0.0.0:8889"
-    namespace: curse
+    namespace: meltica
     enable_open_metrics: true        # Enable OpenMetrics format for exemplars
     resource_to_telemetry_conversion:
       enabled: true                   # Convert resource attributes to metric labels

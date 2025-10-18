@@ -10,7 +10,7 @@ scrape_configs:
     static_configs:
       - targets: ['otel-collector:8889']
         labels:
-          service: 'curse'
+          service: 'meltica'
 
   - job_name: 'prometheus'
     static_configs:
