@@ -11,4 +11,8 @@ docker compose -f docker-compose.portainer.yml down
 echo "Stopping Bark..."
 docker compose -f docker-compose.bark.yml down
 
+# Stop Telemetry
+echo "Stopping Telemetry Stack..."
+docker compose -f docker-compose.telemetry.yml down
+
 echo "All services have been stopped."
