@@ -1,0 +1,15 @@
+services:
+  # Mermaid Live Editor - diagram editor UI
+  mermaid-live-editor:
+    image: ghcr.io/mermaid-js/mermaid-live-editor:latest
+    container_name: mermaid-live-editor
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - "8005:8080"
+    networks:
+      - mermaid-network
+
+networks:
+  mermaid-network:
+    driver: bridge
