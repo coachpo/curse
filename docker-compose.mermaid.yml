@@ -3,7 +3,7 @@ services:
   mermaid-live-editor:
     image: ghcr.io/mermaid-js/mermaid-live-editor:latest
     container_name: mermaid-live-editor
-    platform: linux/amd64
+    platform: linux/arm64
     restart: unless-stopped
     ports:
       - "8005:8080"
