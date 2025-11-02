@@ -5,7 +5,7 @@ services:
     container_name: droid2api
     restart: unless-stopped
     environment:
-      FACTORY_API_KEY: ${FACTORY_API_KEY:dummykey}
+      FACTORY_API_KEY: dummykey
     ports:
       - "3100:3000"
     networks:
