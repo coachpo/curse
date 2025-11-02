@@ -4,3 +4,5 @@ LibreChat/
 # Docker volumes and data
 portainer_data/
 
+.env
+.env.*
