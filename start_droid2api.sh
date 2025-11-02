@@ -3,11 +3,6 @@
 # Start Droid2API using Docker Compose
 echo "Starting Droid2API using Docker Compose..."
 
-if [ -z "${FACTORY_API_KEY}" ]; then
-    echo "FACTORY_API_KEY environment variable is not set. Export it before starting Droid2API."
-    exit 1
-fi
-
 docker compose -f docker-compose.droid2api.yml up -d
 
 if [ $? -eq 0 ]; then
