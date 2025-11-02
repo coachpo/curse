@@ -15,6 +15,10 @@ docker compose -f docker-compose.bark.yml down
 echo "Stopping Mermaid Live Editor..."
 docker compose -f docker-compose.mermaid.yml down
 
+# Stop Droid2API
+echo "Stopping Droid2API..."
+docker compose -f docker-compose.droid2api.yml down
+
 # Stop Telemetry
 echo "Stopping Telemetry Stack..."
 docker compose -f docker-compose.telemetry.yml down
