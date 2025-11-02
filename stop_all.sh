@@ -11,6 +11,10 @@ docker compose -f docker-compose.portainer.yml down
 echo "Stopping Bark..."
 docker compose -f docker-compose.bark.yml down
 
+# Stop Duck Free notifier
+echo "Stopping Duck Free notifier..."
+docker compose -f docker-compose.duck-free.yml down
+
 # Stop Mermaid Live Editor
 echo "Stopping Mermaid Live Editor..."
 docker compose -f docker-compose.mermaid.yml down

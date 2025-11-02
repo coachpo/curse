@@ -1,0 +1,14 @@
+services:
+  # Duck Free - DuckCoding availability notifier
+  duck-free:
+    image: ghcr.io/coachpo/duck-free:2
+    container_name: duck-free
+    restart: unless-stopped
+    env_file:
+      - duck-free-config/.env.duck-free
+    networks:
+      - duck-free-network
+
+networks:
+  duck-free-network:
+    driver: bridge
