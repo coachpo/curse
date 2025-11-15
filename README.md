@@ -1,138 +1,49 @@
 # Curse Project - Docker Compose Setup
 
-This project uses separate Docker Compose files for each service. The shell scripts have been updated to use Docker Compose instead of individual `docker run` commands.
+This repo groups several self-hosted services. Each service now lives in its own folder containing its Docker Compose file and a helper start script.
 
-## Services
+## Folder layout
+- `portainer/` – Portainer UI (`docker-compose.portainer.yml`, `start_potainer.sh`)
+- `bark/` – Bark push server (`docker-compose.bark.yml`, `start_bark.sh`)
+- `duck-free/` – DuckCoding notifier (`docker-compose.duck-free.yml`, `start_duck_free.sh`, `duck-free-config/`)
+- `mermaid/` – Mermaid Live Editor (`docker-compose.mermaid.yml`, `start_mermaid.sh`)
+- `registry/` – Local Docker registry (`docker-compose.registry.yml`, `start_registry.sh`, `registry-config/`)
+- `telemetry/` – OTEL collector + Prometheus + Grafana (`docker-compose.telemetry.yml`, `start_telemetry.sh`, `telemetry-config/`)
+- `shrimp-task-manager/` – Shrimp Task Manager (`docker-compose.shrimp-task-manager.yml`, `start_shrimp_task_manager.sh`)
+- Root helpers: `start_all.sh`, `stop_all.sh`, `init_docker_env.sh`, `update_fastest_mirror.sh`
 
-Each service has its own Docker Compose file:
+## Quick start
+- Start everything: `./start_all.sh`
+- Stop everything: `./stop_all.sh`
+- Start a single service (examples):
+  - Portainer: `./portainer/start_potainer.sh`
+  - Bark: `./bark/start_bark.sh`
+  - Duck Free: `./duck-free/start_duck_free.sh`
+  - Mermaid: `./mermaid/start_mermaid.sh`
+  - Registry: `./registry/start_registry.sh`
+  - Telemetry: `./telemetry/start_telemetry.sh`
+  - Shrimp Task Manager: `./shrimp-task-manager/start_shrimp_task_manager.sh`
 
-- **Portainer** - Docker management UI (ports 8000, 9000, 9443)
-  - File: `docker-compose.portainer.yml`
-- **Bark Server** - iOS push notification service (port 8087)
-  - File: `docker-compose.bark.yml`
-
-## Quick Start
-
-### Start All Services
+## Compose commands (pattern)
+From the repo root you can run Compose directly with the file in each folder, e.g.:
 ```bash
-./start_all.sh
-```
-
-### Start Individual Services
-```bash
-./start_potainer.sh     # Start Portainer only
-./start_bark.sh         # Start Bark Server only
-```
-
-### Stop All Services
-```bash
-./stop_all.sh
-```
-
-### Additional Scripts
-```bash
-./init_docker_env.sh        # Install and configure Docker
-./update_fastest_mirror.sh  # Find and update to fastest Ubuntu mirror
-```
-
-## Docker Compose Commands
-
-### Portainer Commands
-```bash
-# Start Portainer
-docker compose -f docker-compose.portainer.yml up -d
-
-# Stop Portainer
-docker compose -f docker-compose.portainer.yml down
-
-# View Portainer logs
-docker compose -f docker-compose.portainer.yml logs
-
-# Restart Portainer
-docker compose -f docker-compose.portainer.yml restart
-```
-
-### Bark Commands
-```bash
-# Start Bark
-docker compose -f docker-compose.bark.yml up -d
-
-# Stop Bark
-docker compose -f docker-compose.bark.yml down
-
-# View Bark logs
-docker compose -f docker-compose.bark.yml logs
-
-# Restart Bark
-docker compose -f docker-compose.bark.yml restart
+docker compose -f portainer/docker-compose.portainer.yml up -d
+docker compose -f bark/docker-compose.bark.yml logs
+docker compose -f telemetry/docker-compose.telemetry.yml down
+docker compose -f shrimp-task-manager/docker-compose.shrimp-task-manager.yml up -d
 ```
 
 ## Access URLs
+- Portainer: http://localhost:8000 / http://localhost:9000 / https://localhost:9443
+- Bark: http://localhost:8087
+- Mermaid: http://localhost:8005
+- Grafana: http://capy.lan:3000 (admin/admin)
+- Prometheus: http://capy.lan:9090
+- OTLP endpoints: gRPC `capy.lan:4317`, HTTP `capy.lan:4318`
+- Registry: http://localhost:5000
+- Shrimp Task Manager: http://localhost:9998
 
-- **Portainer**: http://localhost:8000 or http://localhost:9000
-- **Bark Server**: http://localhost:8087
-
-## Configuration Files
-
-- `docker-compose.portainer.yml` - Portainer Docker Compose configuration
-- `docker-compose.bark.yml` - Bark Docker Compose configuration
-- `init_docker_env.sh` - Docker installation and environment setup script
-- `update_fastest_mirror.sh` - Ubuntu mirror finder and system updater
-- `start_all.sh` - Start all services script
-- `stop_all.sh` - Stop all services script
-
-## Migration from Shell Scripts
-
-The original shell scripts have been updated to use Docker Compose:
-- `start_potainer.sh` - Now uses `docker compose -f docker-compose.portainer.yml up -d`
-- `start_bark.sh` - Now uses `docker compose -f docker-compose.bark.yml up -d`
-- `init_docker_env.sh` - Improved Docker installation script with better error handling
-- `update_fastest_mirror.sh` - Enhanced Ubuntu mirror finder that automatically updates system sources
-
-## Volumes and Networks
-
-### Portainer
-- `portainer_data` - Portainer configuration and data
-- `portainer-network` - Portainer network
-
-### Bark
-- `bark-network` - Bark network
-
-## Troubleshooting
-
-### View Service Logs
-```bash
-# Portainer logs
-docker compose -f docker-compose.portainer.yml logs
-
-# Bark logs
-docker compose -f docker-compose.bark.yml logs
-```
-
-### Check Service Status
-```bash
-# Check all containers
-docker ps
-
-# Check specific service
-docker compose -f docker-compose.portainer.yml ps
-docker compose -f docker-compose.bark.yml ps
-```
-
-### Restart a Service
-```bash
-# Restart Portainer
-docker compose -f docker-compose.portainer.yml restart
-
-# Restart Bark
-docker compose -f docker-compose.bark.yml restart
-```
-
-### Rebuild and Start
-```bash
-# Rebuild and start Portainer
-docker compose -f docker-compose.portainer.yml up -d --build
-
-# Rebuild and start Bark
-docker compose -f docker-compose.bark.yml up -d --build
-```
+## Notes
+- Config folders stay beside their Compose files, so relative paths inside the YAMLs still work.
+- Start scripts resolve their own directory, so they work no matter where you run them from.
+- If you add a new service, mirror this pattern: create a folder with `docker-compose.<name>.yml` and a `start_<name>.sh` that points at it.

@@ -1,0 +1,13 @@
+services:
+  shrimp-task-manager:
+    image: cjo4m06/shrimp-task-manager:latest
+    container_name: shrimp-task-manager
+    restart: unless-stopped
+    ports:
+      - "9998:9998"
+    volumes:
+      - shrimp_data:/data
+
+volumes:
+  shrimp_data:
+    driver: local
