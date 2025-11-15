@@ -1,6 +1,6 @@
 services:
   shrimp-task-manager:
-    image: cjo4m06/shrimp-task-manager:latest
+    image: ghcr.io/coachpo/mcp-shrimp-task-manager:latest
     container_name: shrimp-task-manager
     restart: unless-stopped
     ports:
