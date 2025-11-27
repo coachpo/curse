@@ -1,0 +1,13 @@
+services:
+  # OpenList - self-hosted Dropbox-style file hosting
+  openlist:
+    image: openlistteam/openlist:latest
+    container_name: openlist
+    user: "0:0" # Replace with your UID:GID to match host permissions
+    volumes:
+      - "./data:/opt/openlist/data"
+    ports:
+      - "5244:5244"
+    environment:
+      - UMASK=022
+    restart: unless-stopped

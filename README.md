@@ -4,13 +4,14 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
 
 ## Prerequisites
 - Docker + Docker Compose v2 on the host.
-- Free ports: 3000, 4317, 4318, 5000, 8000, 8005, 8087, 9000, 9443, 9998, 13133, 8889, 9090.
+- Free ports: 3000, 4317, 4318, 5000, 8000, 8005, 8087, 9000, 9443, 9998, 13133, 8889, 9090, 5244.
 - (Duck Free) Copy `duck-free/duck-free-config/example.env` to `duck-free/duck-free-config/.env.duck-free` and fill your Bark credentials.
 
 ## How to run
 - Start a service with its helper script (runs from any directory):
   - Portainer: `./portainer/start_potainer.sh`
   - Bark: `./bark/start_bark.sh`
+  - OpenList: `./openlist/start_openlist.sh`
   - Duck Free: `./duck-free/start_duck_free.sh`
   - Mermaid: `./mermaid/start_mermaid.sh`
   - Registry: `./registry/start_registry.sh`
@@ -25,6 +26,7 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
 | --- | --- | --- | --- | --- |
 | Portainer | Docker management UI | `portainer/start_potainer.sh` | http://localhost:8000 / 9000, https://localhost:9443 | Volume `portainer_data` |
 | Bark | iOS push gateway | `bark/start_bark.sh` | http://localhost:8087 | — |
+| OpenList | Self-hosted file hosting | `openlist/start_openlist.sh` | http://localhost:5244 | Bind-mount `openlist/data` (match UID:GID via `user` in compose) |
 | Duck Free | DuckCoding availability notifier (uses Bark) | `duck-free/start_duck_free.sh` | (no exposed port) | `duck-free/duck-free-config/.env.duck-free` |
 | Mermaid Live Editor | Diagram editor | `mermaid/start_mermaid.sh` | http://localhost:8005 | — |
 | Registry | Local Docker registry | `registry/start_registry.sh` | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
