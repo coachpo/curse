@@ -1,6 +1,6 @@
 :80 {
-    # Serve cached/static resources from host path at /cache/*
-    handle_path /cache/* {
+    # Serve cached/static resources from host path at /static-cache/*
+    handle_path /static-cache/* {
         root * /srv/openlist-cache
         file_server browse
     }
