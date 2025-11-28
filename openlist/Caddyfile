@@ -1,0 +1,10 @@
+:80 {
+    # Serve cached/static resources from host path at /cache/*
+    handle_path /cache/* {
+        root * /srv/openlist-cache
+        file_server browse
+    }
+
+    # Proxy all other requests to the OpenList app
+    reverse_proxy * openlist:5244
+}

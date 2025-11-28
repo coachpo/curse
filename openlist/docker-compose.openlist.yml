@@ -6,8 +6,18 @@ services:
     user: "0:0" # Replace with your UID:GID to match host permissions
     volumes:
       - "./data:/opt/openlist/data"
-    ports:
-      - "5244:5244"
     environment:
       - UMASK=022
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    container_name: openlist-caddy
+    depends_on:
+      - openlist
+    ports:
+      - "8010:80"
+    volumes:
+      - "/home/ubuntu/sdcard/openlist-cache/:/srv/openlist-cache:ro"
+      - "./Caddyfile:/etc/caddy/Caddyfile:ro"
     restart: unless-stopped
