@@ -6,6 +6,7 @@ services:
     user: "0:0" # Replace with your UID:GID to match host permissions
     volumes:
       - "./data:/opt/openlist/data"
+      - "/home/ubuntu/sdcard/openlist-cache:/opt/openlist/data/openlist-cache"
     environment:
       - UMASK=022
     restart: unless-stopped
