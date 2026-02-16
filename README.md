@@ -4,7 +4,7 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
 
 ## Prerequisites
 - Docker + Docker Compose v2 on the host.
-- Free ports: 3000, 4317, 4318, 5000, 8000, 8005, 8087, 9000, 9443, 9998, 13133, 8889, 9090, 5244.
+- Free ports: 3000, 4317, 4318, 5000, 8000, 8005, 8087, 9000, 9443, 9998, 13133, 8889, 9090, 5244, 13000, 18000.
 - (Duck Free) Copy `duck-free/duck-free-config/example.env` to `duck-free/duck-free-config/.env.duck-free` and fill your Bark credentials.
 
 ## How to run
@@ -15,6 +15,7 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
   - Duck Free: `./duck-free/start_duck_free.sh`
   - Mermaid: `./mermaid/start_mermaid.sh`
   - Registry: `./registry/start_registry.sh`
+  - Spear: `./spear/start_spear.sh`
   - Telemetry stack: `./telemetry/start_telemetry.sh`
   - Shrimp Task Manager: `./shrimp-task-manager/start_shrimp_task_manager.sh`
 - Or use Compose directly from repo root: `docker compose -f <folder>/docker-compose.<name>.yml up -d`
@@ -30,6 +31,7 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
 | Duck Free | DuckCoding availability notifier (uses Bark) | `duck-free/start_duck_free.sh` | (no exposed port) | `duck-free/duck-free-config/.env.duck-free` |
 | Mermaid Live Editor | Diagram editor | `mermaid/start_mermaid.sh` | http://localhost:8005 | — |
 | Registry | Local Docker registry | `registry/start_registry.sh` | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
+| Spear | Spear app (db + backend + worker + frontend) | `spear/start_spear.sh` | http://localhost:13000 (frontend), http://localhost:18000 (backend) | `spear/.env` |
 | Telemetry | OTEL collector + Prometheus + Grafana | `telemetry/start_telemetry.sh` | Grafana http://capy.lan:3000 (admin/admin); Prometheus http://capy.lan:9090; OTLP gRPC capy.lan:4317; OTLP HTTP capy.lan:4318 | `telemetry/telemetry-config/*`, volumes `prometheus-data`, `grafana-data` |
 | Shrimp Task Manager | Task manager UI/API | `shrimp-task-manager/start_shrimp_task_manager.sh` | http://localhost:9998 | Volume `shrimp_data` |
 
