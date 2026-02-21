@@ -18,6 +18,13 @@ run_compose() {
   COMPOSE_DISABLE_ENV_FILE=1 docker compose "${COMPOSE_ARGS[@]}" "$@"
 }
 
+echo "Pulling latest Prism images..."
+if ! run_compose pull; then
+  echo "Failed to pull Prism images."
+  echo "Use \"docker compose --project-directory $SCRIPT_DIR -f $COMPOSE_FILE logs\" to inspect."
+  exit 1
+fi
+
 echo "Starting Prism using Docker Compose..."
 if ! run_compose up -d; then
   echo "Failed to start Prism. Please check Docker logs."
