@@ -16,6 +16,7 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
   - Mermaid: `./mermaid/start_mermaid.sh`
   - Registry: `./registry/start_registry.sh`
   - Spear: `./spear/start_spear.sh`
+  - Prism: `./prism/start_prism.sh`
   - Telemetry stack: `./telemetry/start_telemetry.sh`
   - Shrimp Task Manager: `./shrimp-task-manager/start_shrimp_task_manager.sh`
 - Or use Compose directly from repo root: `docker compose -f <folder>/docker-compose.<name>.yml up -d`
@@ -32,6 +33,7 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
 | Mermaid Live Editor | Diagram editor | `mermaid/start_mermaid.sh` | http://localhost:8005 | — |
 | Registry | Local Docker registry | `registry/start_registry.sh` | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
 | Spear | Spear app (db + backend + worker + frontend) | `spear/start_spear.sh` | http://localhost:13000 (frontend), http://localhost:18000 (backend) | `spear/.env` |
+| Prism | Prism app (backend + frontend) | `prism/start_prism.sh` | http://localhost:3000 (frontend), http://localhost:8000 (backend) | `prism/.env` (optional, copy from `prism/env.example`) |
 | Telemetry | OTEL collector + Prometheus + Grafana | `telemetry/start_telemetry.sh` | Grafana http://capy.lan:3000 (admin/admin); Prometheus http://capy.lan:9090; OTLP gRPC capy.lan:4317; OTLP HTTP capy.lan:4318 | `telemetry/telemetry-config/*`, volumes `prometheus-data`, `grafana-data` |
 | Shrimp Task Manager | Task manager UI/API | `shrimp-task-manager/start_shrimp_task_manager.sh` | http://localhost:9998 | Volume `shrimp_data` |
 
@@ -43,6 +45,7 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
   - `telemetry-config/grafana-datasources.yml` wires Grafana to Prometheus; default Grafana creds `admin/admin`.
 - Duck Free: `.env.duck-free` must be created from the example before starting.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
+- Prism: to override image tags or ports, copy `prism/env.example` to `prism/.env` and edit values.
 - Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.
 
 ## Troubleshooting
