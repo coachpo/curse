@@ -1,41 +1,71 @@
 # Curse Compose Stack
 
-Self-hosted services packaged as separate Docker Compose bundles, each with its own start script and config folder (if needed).
+Self-hosted services packaged as separate Docker Compose bundles. All ports are configurable via environment variables. Services are auto-discovered by the Makefile.
 
 ## Prerequisites
 - Docker + Docker Compose v2 on the host.
-- Free ports: 3000, 4317, 4318, 5000, 8000, 8005, 8087, 9000, 9443, 9998, 13133, 8889, 9090, 5244, 13000, 18000.
 - (Duck Free) Copy `duck-free/duck-free-config/example.env` to `duck-free/duck-free-config/.env.duck-free` and fill your Bark credentials.
 
 ## How to run
-- Start a service with its helper script (runs from any directory):
-  - Portainer: `./portainer/start_potainer.sh`
-  - Bark: `./bark/start_bark.sh`
-  - OpenList: `./openlist/start_openlist.sh`
-  - Duck Free: `./duck-free/start_duck_free.sh`
-  - Mermaid: `./mermaid/start_mermaid.sh`
-  - Registry: `./registry/start_registry.sh`
-  - Spear: `./spear/start_spear.sh`
-  - Prism: `./prism/start_prism.sh`
-  - Telemetry stack: `./telemetry/start_telemetry.sh`
-  - Shrimp Task Manager: `./shrimp-task-manager/start_shrimp_task_manager.sh`
-- Or use Compose directly from repo root: `docker compose -f <folder>/docker-compose.<name>.yml up -d`
-- Stop a service: `docker compose -f <folder>/docker-compose.<name>.yml down`
-- View logs: `docker compose -f <folder>/docker-compose.<name>.yml logs -f`
+
+### Using Make (recommended)
+```bash
+make start-<service>     # Start a single service
+make stop-<service>      # Stop a single service
+make restart-<service>   # Restart a single service
+make logs-<service>      # Tail logs
+make start-all           # Start everything
+make stop-all            # Stop everything
+make status              # Show running containers
+make ports               # Show port assignments
+make services            # List discovered services
+```
+
+### Using Compose directly
+Each service has a `compose.yml` in its directory:
+```bash
+cd <service> && docker compose up -d
+cd <service> && docker compose down
+cd <service> && docker compose logs -f
+
+# Or from repo root:
+docker compose -f <service>/compose.yml up -d
+```
 
 ## Services at a glance
-| Service | Purpose | Start file | Default URL/Port | Config |
-| --- | --- | --- | --- | --- |
-| Portainer | Docker management UI | `portainer/start_potainer.sh` | http://localhost:8000 / 9000, https://localhost:9443 | Volume `portainer_data` |
-| Bark | iOS push gateway | `bark/start_bark.sh` | http://localhost:8087 | — |
-| OpenList | Self-hosted file hosting | `openlist/start_openlist.sh` | http://localhost:5244 | Bind-mount `openlist/data` (match UID:GID via `user` in compose) |
-| Duck Free | DuckCoding availability notifier (uses Bark) | `duck-free/start_duck_free.sh` | (no exposed port) | `duck-free/duck-free-config/.env.duck-free` |
-| Mermaid Live Editor | Diagram editor | `mermaid/start_mermaid.sh` | http://localhost:8005 | — |
-| Registry | Local Docker registry | `registry/start_registry.sh` | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
-| Spear | Spear app (db + backend + worker + frontend) | `spear/start_spear.sh` | http://localhost:13000 (frontend), http://localhost:18000 (backend) | `spear/.env` |
-| Prism | Prism app (backend + frontend) | `prism/start_prism.sh` | http://localhost:3000 (frontend), http://localhost:8000 (backend) | `prism/.env` (optional, copy from `prism/env.example`) |
-| Telemetry | OTEL collector + Prometheus + Grafana | `telemetry/start_telemetry.sh` | Grafana http://capy.lan:3000 (admin/admin); Prometheus http://capy.lan:9090; OTLP gRPC capy.lan:4317; OTLP HTTP capy.lan:4318 | `telemetry/telemetry-config/*`, volumes `prometheus-data`, `grafana-data` |
-| Shrimp Task Manager | Task manager UI/API | `shrimp-task-manager/start_shrimp_task_manager.sh` | http://localhost:9998 | Volume `shrimp_data` |
+| Service | Purpose | Default URL/Port | Config |
+| --- | --- | --- | --- |
+| Portainer | Docker management UI | http://localhost:9000, https://localhost:9443 (edge: 8001) | Volume `portainer_data` |
+| Bark | iOS push gateway | http://localhost:8087 | — |
+| Duck Free | DuckCoding availability notifier (uses Bark) | (no exposed port) | `duck-free/duck-free-config/.env.duck-free` |
+| Mermaid Live Editor | Diagram editor | http://localhost:8005 | — |
+| Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
+| Spear | Spear app (db + backend + worker + frontend) | http://localhost:3100 (frontend), http://localhost:8100 (backend) | `spear/.env` |
+| Prism | Prism app (backend + frontend) | http://localhost:3000 (frontend), http://localhost:8000 (backend) | `prism/.env` (optional, copy from `prism/env.example`) |
+| Telemetry | OTEL collector + Prometheus + Grafana | Grafana http://localhost:3001; Prometheus http://localhost:9090; OTLP gRPC :4317; OTLP HTTP :4318 | `telemetry/telemetry-config/*`, volumes `prometheus-data`, `grafana-data` |
+
+## Default port map
+
+All ports are overridable via environment variables in each service's `.env` file or shell environment.
+
+| Port | Service | Env var |
+|------|---------|---------|
+| 3000 | Prism frontend | `FRONTEND_PORT` |
+| 3001 | Grafana | `GRAFANA_PORT` |
+| 3100 | Spear frontend | `SPEAR_FRONTEND_PORT` |
+| 4317 | OTLP gRPC | `OTLP_GRPC_PORT` |
+| 4318 | OTLP HTTP | `OTLP_HTTP_PORT` |
+| 5000 | Docker Registry | `REGISTRY_PORT` |
+| 8000 | Prism backend | `BACKEND_PORT` |
+| 8001 | Portainer edge | `PORTAINER_EDGE_PORT` |
+| 8005 | Mermaid | `MERMAID_PORT` |
+| 8087 | Bark | `BARK_PORT` |
+| 8100 | Spear backend | `SPEAR_BACKEND_PORT` |
+| 8889 | OTEL Prometheus exporter | `OTEL_METRICS_PORT` |
+| 9000 | Portainer UI | `PORTAINER_PORT` |
+| 9090 | Prometheus | `PROMETHEUS_PORT` |
+| 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
+| 13133 | OTEL health check | `OTEL_HEALTH_PORT` |
 
 ## Configuration notes
 - Config folders sit beside their Compose files, so relative paths in YAML stay valid.
@@ -49,11 +79,14 @@ Self-hosted services packaged as separate Docker Compose bundles, each with its 
 - Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.
 
 ## Troubleshooting
-- Check status: `docker compose -f <folder>/docker-compose.<name>.yml ps`
-- Follow logs: `docker compose -f <folder>/docker-compose.<name>.yml logs -f`
-- Restart a service: `docker compose -f <folder>/docker-compose.<name>.yml up -d --force-recreate`
-- Ports in use: stop conflicting local services or change host bindings in the compose files.
+- Check status: `make status` or `docker compose -f <service>/compose.yml ps`
+- Follow logs: `make logs-<service>` or `cd <service> && docker compose logs -f`
+- Restart a service: `make restart-<service>`
+- Ports in use: override the default port via the corresponding env var (see port map above).
 - ARM note: Mermaid image is pinned to `linux/arm64`; adjust `platform` if running on x86_64.
 
-## Contributing / extending
-- To add a new service, mirror the pattern: a folder with `docker-compose.<name>.yml`, an optional config subfolder, and a `start_<name>.sh` that resolves its own directory.
+## Adding a new service
+1. Create `<name>/compose.yml` — the Makefile auto-discovers it.
+2. Optionally add `<name>/<name>-config/` for config files and `<name>/env.example` for secrets.
+3. All ports should be configurable via `${ENV_VAR:-default}` in the compose file.
+4. Update this README's service table and port map.

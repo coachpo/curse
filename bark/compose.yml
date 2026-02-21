@@ -5,7 +5,7 @@ services:
     container_name: bark
     restart: unless-stopped
     ports:
-      - "8087:8080"
+      - "${BARK_PORT:-8087}:8080"
     networks:
       - bark-network
 

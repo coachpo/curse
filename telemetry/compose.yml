@@ -7,10 +7,10 @@ services:
     volumes:
       - ./telemetry-config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     ports:
-      - "4317:4317"    # OTLP gRPC
-      - "4318:4318"    # OTLP HTTP
-      - "8889:8889"    # Prometheus exporter
-      - "13133:13133"  # Health check
+      - "${OTLP_GRPC_PORT:-4317}:4317"      # OTLP gRPC
+      - "${OTLP_HTTP_PORT:-4318}:4318"      # OTLP HTTP
+      - "${OTEL_METRICS_PORT:-8889}:8889"   # Prometheus exporter
+      - "${OTEL_HEALTH_PORT:-13133}:13133"  # Health check
     networks:
       - curse-telemetry
 
@@ -27,7 +27,7 @@ services:
       - ./telemetry-config/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"
     depends_on:
       - otel-collector
     networks:
@@ -44,7 +44,7 @@ services:
       - grafana-data:/var/lib/grafana
       - ./telemetry-config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3001}:3000"
     depends_on:
       - prometheus
     networks:
