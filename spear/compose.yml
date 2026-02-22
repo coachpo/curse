@@ -1,76 +1,92 @@
+# Beacon Spear — Docker Compose production deployment
+#
+# Architecture:
+#   Caddy (reverse proxy, auto-HTTPS)
+#     ├── /api/*, /healthz, /admin/* → backend (gunicorn:8100 + delivery worker)
+#     └── /*                         → frontend (nginx:3100)
+#
+# SQLite note: gunicorn and the delivery worker run in the SAME container
+# because SQLite WAL mode requires shared memory (-shm file) between
+# processes — this doesn't work reliably across container boundaries.
+#
+# Usage:
+#   cp env.example .env   # fill in real values
+#   docker compose up -d
+#   docker compose logs -f
+
 services:
-  db:
-    image: postgres:16-alpine
+
+  # ── Reverse proxy (automatic HTTPS via Let's Encrypt) ─────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: spear-caddy
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-beacon}
-      POSTGRES_USER: ${POSTGRES_USER:-beacon}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-beacon}
+    ports:
+      - "${SPEAR_HTTP_PORT:-80}:80"
+      - "${SPEAR_HTTPS_PORT:-443}:443"
+      - "${SPEAR_HTTPS_PORT:-443}:443/udp"   # HTTP/3 (QUIC)
     volumes:
-      - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
-      interval: 5s
-      timeout: 3s
-      retries: 20
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # TLS certs — must be a named volume
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - public
+      - internal
 
+  # ── Django + Gunicorn + Delivery Worker ───────────────────────────────────
+  # Single container runs both processes to keep SQLite WAL safe.
   backend:
-    image: ${BACKEND_IMAGE:-beacon-spear-backend:local}
+    image: ghcr.io/${GHCR_OWNER}/beacon-spear-backend:${IMAGE_TAG:-latest}
+    container_name: spear-backend
     restart: unless-stopped
+    entrypoint: ["/bin/sh", "/app/entrypoint.sh"]
+    expose:
+      - "8100"
+    env_file: .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-beacon}:${POSTGRES_PASSWORD:-beacon}@db:5432/${POSTGRES_DB:-beacon}
-      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure}
-      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:${SPEAR_FRONTEND_PORT:-3100}}
-      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-dev-insecure}
-      TOKEN_HASH_KEY: ${TOKEN_HASH_KEY:-}
-      ALLOW_USER_SIGNUP: ${ALLOW_USER_SIGNUP:-true}
-      CHANNEL_CONFIG_ENCRYPTION_KEY: ${CHANNEL_CONFIG_ENCRYPTION_KEY:-}
-      EMAIL_HOST: ${EMAIL_HOST:-}
-      EMAIL_PORT: ${EMAIL_PORT:-587}
-      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
-      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
-      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
-      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@localhost}
-    ports:
-      - "${SPEAR_BACKEND_PORT:-8100}:8100"
-    depends_on:
-      db:
-        condition: service_healthy
+      - DATABASE_URL=sqlite:////app/data/db.sqlite3
+    volumes:
+      - ./entrypoint.sh:/app/entrypoint.sh:ro
+      - sqlite_data:/app/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS --max-time 2 http://localhost:8100/healthz | grep -Eq '\"ok\"[[:space:]]*:[[:space:]]*true'"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8100/healthz')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+      - public    # outbound access for Bark/ntfy/MQTT delivery
 
-  worker:
-    image: ${BACKEND_IMAGE:-beacon-spear-backend:local}
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-beacon}:${POSTGRES_PASSWORD:-beacon}@db:5432/${POSTGRES_DB:-beacon}
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure}
-      CHANNEL_CONFIG_ENCRYPTION_KEY: ${CHANNEL_CONFIG_ENCRYPTION_KEY:-}
-    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py deliveries_worker"]
-    depends_on:
-      db:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-
+  # ── React SPA (nginx) ────────────────────────────────────────────────────
   frontend:
-    image: ${FRONTEND_IMAGE:-beacon-spear-frontend:local}
+    image: ghcr.io/${GHCR_OWNER}/beacon-spear-frontend:${IMAGE_TAG:-latest}
+    container_name: spear-frontend
     restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-    ports:
-      - "${SPEAR_FRONTEND_PORT:-3100}:3100"
+    expose:
+      - "3100"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS --max-time 2 http://localhost:3100/healthz | grep -Eq '\"ok\"[[:space:]]*:[[:space:]]*true'"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/healthz > /dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - internal
 
 volumes:
-  db_data:
+  sqlite_data:       # SQLite DB + WAL files — mount the directory, never the file
+  caddy_data:        # Let's Encrypt certs and ACME state
+  caddy_config:      # Caddy runtime config cache
+
+networks:
+  public:
+    driver: bridge
+  internal:
+    driver: bridge
+    internal: true   # frontend has no direct internet egress

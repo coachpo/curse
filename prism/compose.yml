@@ -1,20 +1,36 @@
 services:
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/coachpo/prism-backend:latest}
+    image: ${PRISM_BACKEND_IMAGE:-ghcr.io/coachpo/prism-backend:latest}
+    container_name: prism-backend
     restart: unless-stopped
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${PRISM_BACKEND_PORT:-8000}:8000"
     volumes:
       - prism_data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/healthz > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - prism-network
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/coachpo/prism-frontend:latest}
+    image: ${PRISM_FRONTEND_IMAGE:-ghcr.io/coachpo/prism-frontend:latest}
+    container_name: prism-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${PRISM_FRONTEND_PORT:-3000}:3000"
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - prism-network
 
 volumes:
   prism_data:
+
+networks:
+  prism-network:
+    driver: bridge
