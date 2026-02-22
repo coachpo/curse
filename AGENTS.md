@@ -33,7 +33,7 @@ Each service follows the same pattern:
 └── env.example                  # optional, copy to .env
 ```
 
-Spear layout (builds from local source, no config subfolder):
+Spear layout (pulls pre-built images from GHCR, no config subfolder):
 ```
 spear/
 ├── compose.yml          # nginx proxy + backend + frontend + worker
@@ -71,7 +71,7 @@ spear/
 - **Never use generic env var names** — always namespace with service prefix (e.g. `PRISM_*`, `SPEAR_*`).
 - **Mermaid is ARM-only** — `platform: linux/arm64` hardcoded. Change if deploying to x86_64.
 - **Spear placeholder secrets** — `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, `TOKEN_HASH_KEY`, `CHANNEL_CONFIG_ENCRYPTION_KEY` in `spear/env.example` must be replaced. All runtime defaults are embedded in compose.yml.
-- **Spear builds from local source** — requires `../backend` and `../frontend` directories adjacent to the curse repo.
+- **Spear does not build images locally** — it must pull `ghcr.io/coachpo/beacon-spear-backend:latest` and `ghcr.io/coachpo/beacon-spear-frontend:latest` from GHCR.
 - **Don't add services to Makefile manually** — it auto-discovers `*/compose.yml`.
 
 ## COMMANDS

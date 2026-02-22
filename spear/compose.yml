@@ -30,9 +30,8 @@ services:
       start_period: 10s
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/coachpo/beacon-spear-frontend:latest
+    pull_policy: always
     expose:
       - "3100"
     networks:
@@ -53,9 +52,8 @@ services:
       start_period: 10s
 
   backend:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
+    image: ghcr.io/coachpo/beacon-spear-backend:latest
+    pull_policy: always
     env_file:
       - ./backend.env
     environment:
@@ -98,9 +96,8 @@ services:
       start_period: 20s
 
   worker:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
+    image: ghcr.io/coachpo/beacon-spear-backend:latest
+    pull_policy: always
     command: ["python", "manage.py", "deliveries_worker"]
     env_file:
       - ./backend.env
