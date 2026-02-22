@@ -18,7 +18,7 @@ help: ## Show this help
 	@echo "Discovered services: $(SERVICES)"
 	@echo ""
 	@echo "Per-service:"
-	@echo "  make start-<service>     Start a service"
+	@echo "  make start-<service>     Pull latest images and start a service"
 	@echo "  make stop-<service>      Stop a service"
 	@echo "  make restart-<service>   Restart a service"
 	@echo "  make logs-<service>      Tail logs for a service"
@@ -38,6 +38,7 @@ define SERVICE_TARGETS
 .PHONY: start-$(1) stop-$(1) restart-$(1) logs-$(1)
 
 start-$(1):
+	$$(call compose,$(1)) pull
 	$$(call compose,$(1)) up -d
 
 stop-$(1):
