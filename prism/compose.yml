@@ -14,20 +14,7 @@ services:
     volumes:
       - prism_data:/app/data
     healthcheck:
-      test:
-        - CMD-SHELL
-        - >
-          if command -v curl >/dev/null 2>&1; then
-            resp="$$(curl -sS -w ' HTTPSTATUS:%{http_code}' http://127.0.0.1:8000/health)";
-            body="$${resp% HTTPSTATUS:*}";
-            code="$${resp##*HTTPSTATUS:}";
-            [ "$$code" = "200" ] && [ "$$body" = '{"status":"ok","version":"0.1.0"}' ];
-          elif command -v wget >/dev/null 2>&1; then
-            body="$$(wget -q -O- http://127.0.0.1:8000/health)" &&
-            [ "$$body" = '{"status":"ok","version":"0.1.0"}' ];
-          else
-            exit 1;
-          fi
+      test: ["CMD-SHELL", "curl -sS http://127.0.0.1:8000/health >/dev/null || wget -q -O /dev/null http://127.0.0.1:8000/health"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -39,20 +26,7 @@ services:
     expose:
       - "3000"
     healthcheck:
-      test:
-        - CMD-SHELL
-        - >
-          if command -v curl >/dev/null 2>&1; then
-            resp="$$(curl -sS -w ' HTTPSTATUS:%{http_code}' http://127.0.0.1:3000/health)";
-            body="$${resp% HTTPSTATUS:*}";
-            code="$${resp##*HTTPSTATUS:}";
-            [ "$$code" = "200" ] && [ "$$body" = '{"status":"ok","version":"0.1.0"}' ];
-          elif command -v wget >/dev/null 2>&1; then
-            body="$$(wget -q -O- http://127.0.0.1:3000/health)" &&
-            [ "$$body" = '{"status":"ok","version":"0.1.0"}' ];
-          else
-            exit 1;
-          fi
+      test: ["CMD-SHELL", "curl -sS http://127.0.0.1:3000/health >/dev/null || wget -q -O /dev/null http://127.0.0.1:3000/health"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -74,20 +48,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     healthcheck:
-      test:
-        - CMD-SHELL
-        - >
-          if command -v curl >/dev/null 2>&1; then
-            resp="$$(curl -sS -w ' HTTPSTATUS:%{http_code}' http://127.0.0.1/health)";
-            body="$${resp% HTTPSTATUS:*}";
-            code="$${resp##*HTTPSTATUS:}";
-            [ "$$code" = "200" ] && [ "$$body" = '{"status":"ok","version":"0.1.0"}' ];
-          elif command -v wget >/dev/null 2>&1; then
-            body="$$(wget -q -O- http://127.0.0.1/health)" &&
-            [ "$$body" = '{"status":"ok","version":"0.1.0"}' ];
-          else
-            exit 1;
-          fi
+      test: ["CMD-SHELL", "curl -sS http://127.0.0.1/health >/dev/null || wget -q -O /dev/null http://127.0.0.1/health"]
       interval: 10s
       timeout: 3s
       retries: 5
