@@ -75,7 +75,7 @@ All ports are overridable via environment variables in each service's `.env` fil
   - `telemetry-config/prometheus.yml` scrapes the collector; adjusts labels/targets as needed.
   - `telemetry-config/grafana-datasources.yml` wires Grafana to Prometheus; default Grafana creds `admin/admin`.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
-- Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `8082`) and proxies internally to frontend/backend. Frontend API base is forced to same-origin by default; set `PRISM_FRONTEND_API_BASE` only if you need an explicit backend origin.
+- Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `8082`) and proxies internally to frontend/backend.
 - Spear: pulls pre-built GHCR images (`ghcr.io/coachpo/beacon-spear-backend:latest`, `ghcr.io/coachpo/beacon-spear-frontend:latest`) with `pull_policy: always`. nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults are embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
 - Swiperflix: pre-built GHCR images. Reverse proxy on `SWIPERFLIX_PORT` (default `8084`). All runtime defaults embedded in compose; only OpenList credentials need `.env`.
 - Whisper: pre-built GHCR images. Caddy proxy on `WHISPER_PORT` (default `8085`). All runtime defaults embedded in compose; only `BACKEND_API_KEYS_CSV` and Google credentials JSON (`whisper/secrets/`) needed.

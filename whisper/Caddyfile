@@ -5,12 +5,26 @@
 :80 {
     encode zstd gzip
 
-    # Public API entrypoint for browser calls (e.g. /apis/v1/items).
+    # Legacy compatibility path:
+    # /apis/v1/* -> /v1/*
     handle_path /apis/* {
         reverse_proxy backend:8000
     }
 
-    # Optional direct health endpoint from outside.
+    # Current upstream API routes used by the frontend.
+    handle /v1/* {
+        reverse_proxy backend:8000
+    }
+
+    handle /api/v1/* {
+        reverse_proxy backend:8000
+    }
+
+    handle /metadata* {
+        reverse_proxy backend:8000
+    }
+
+    # Direct health endpoint.
     handle /health {
         reverse_proxy backend:8000
     }
