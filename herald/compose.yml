@@ -1,7 +1,7 @@
 name: beacon-spear
 
 services:
-  proxy:
+  reverse-proxy:
     image: nginx:1.27-alpine
     depends_on:
       backend:
