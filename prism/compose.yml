@@ -1,36 +1,72 @@
+name: prism
+
 services:
   backend:
-    image: ${PRISM_BACKEND_IMAGE:-ghcr.io/coachpo/prism-backend:latest}
-    container_name: prism-backend
+    image: ghcr.io/coachpo/prism-backend:latest
     restart: unless-stopped
-    ports:
-      - "${PRISM_BACKEND_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:///./data/gateway.db
+      HOST: 0.0.0.0
+      PORT: 8000
+      LOG_LEVEL: info
+    expose:
+      - "8000"
     volumes:
       - prism_data:/app/data
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/healthz > /dev/null || exit 1"]
-      interval: 15s
-      timeout: 5s
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)",
+        ]
+      interval: 10s
+      timeout: 3s
       retries: 5
-      start_period: 10s
-    networks:
-      - prism-network
+      start_period: 15s
 
   frontend:
-    image: ${PRISM_FRONTEND_IMAGE:-ghcr.io/coachpo/prism-frontend:latest}
-    container_name: prism-frontend
+    image: ghcr.io/coachpo/prism-frontend:latest
     restart: unless-stopped
-    ports:
-      - "${PRISM_FRONTEND_PORT:-3000}:3000"
+    expose:
+      - "3000"
     depends_on:
       backend:
         condition: service_healthy
-    networks:
-      - prism-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://localhost:3000/healthz >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${PRISM_HTTP_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://localhost/healthz >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
 volumes:
   prism_data:
-
-networks:
-  prism-network:
-    driver: bridge

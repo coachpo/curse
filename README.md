@@ -5,7 +5,7 @@ Self-hosted services packaged as separate Docker Compose bundles. All ports are 
 ## Prerequisites
 - Docker + Docker Compose v2 on the host.
 - (Duck Free) Copy `duck-free/duck-free-config/example.env` to `duck-free/duck-free-config/.env.duck-free` and fill your Bark credentials.
-- (Spear) Copy `spear/env.example` to `spear/.env` and fill in real values (`GHCR_OWNER`, `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, etc.).
+- (Spear) Copy `spear/env.example` to `spear/backend.env` and fill in real values (`DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, etc.).
 
 ## How to run
 
@@ -41,8 +41,8 @@ docker compose -f <service>/compose.yml up -d
 | Duck Free | DuckCoding availability notifier (uses Bark) | (no exposed port) | `duck-free/duck-free-config/.env.duck-free` |
 | Mermaid Live Editor | Diagram editor | http://localhost:8005 | — |
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
-| Spear | Beacon Spear (Caddy → Django backend + worker + React frontend) | http://localhost:80, https://localhost:443 | `spear/.env` (copy from `spear/env.example`), `spear/Caddyfile` |
-| Prism | Prism app (backend + frontend) | http://localhost:3000 (frontend), http://localhost:8000 (backend) | `prism/.env` (optional, copy from `prism/env.example`) |
+| Spear | Beacon Spear (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8080 | `spear/backend.env` (copy from `spear/env.example`), `spear/nginx.conf` |
+| Prism | Prism app (nginx gateway + backend + frontend) | http://localhost:80 | `prism/.env` (optional, copy from `prism/env.example`) |
 | Telemetry | OTEL collector + Prometheus + Grafana | Grafana http://localhost:3001; Prometheus http://localhost:9090; OTLP gRPC :4317; OTLP HTTP :4318 | `telemetry/telemetry-config/*`, volumes `prometheus-data`, `grafana-data` |
 
 ## Default port map
@@ -51,16 +51,14 @@ All ports are overridable via environment variables in each service's `.env` fil
 
 | Port | Service | Env var |
 |------|---------|---------|
-| 80   | Spear (Caddy HTTP) | `SPEAR_HTTP_PORT` |
-| 443  | Spear (Caddy HTTPS + HTTP/3) | `SPEAR_HTTPS_PORT` |
-| 3000 | Prism frontend | `PRISM_FRONTEND_PORT` |
+| 80   | Prism gateway (nginx) | `PRISM_HTTP_PORT` |
 | 3001 | Grafana | `GRAFANA_PORT` |
 | 4317 | OTLP gRPC | `OTLP_GRPC_PORT` |
 | 4318 | OTLP HTTP | `OTLP_HTTP_PORT` |
 | 5000 | Docker Registry | `REGISTRY_PORT` |
-| 8000 | Prism backend | `PRISM_BACKEND_PORT` |
 | 8001 | Portainer edge | `PORTAINER_EDGE_PORT` |
 | 8005 | Mermaid | `MERMAID_PORT` |
+| 8080 | Spear (nginx proxy) | `SPEAR_PORT` |
 | 8087 | Bark | `BARK_PORT` |
 | 8889 | OTEL Prometheus exporter | `OTEL_METRICS_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
@@ -76,8 +74,8 @@ All ports are overridable via environment variables in each service's `.env` fil
   - `telemetry-config/grafana-datasources.yml` wires Grafana to Prometheus; default Grafana creds `admin/admin`.
 - Duck Free: `.env.duck-free` must be created from the example before starting.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
-- Prism: to override image tags or ports, copy `prism/env.example` to `prism/.env` and edit values.
-- Spear: Caddy handles TLS termination and reverse-proxies to internal backend (:8100) and frontend (:3100). Backend and frontend ports are not exposed to the host. Copy `spear/env.example` to `spear/.env` and replace all `change-me` placeholders before starting.
+- Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `80`) and proxies internally to frontend/backend.
+- Spear: nginx reverse-proxies to internal backend (:8100) and frontend (:3100). Backend and frontend are built from local source (`../backend`, `../frontend`). Worker runs as a separate container sharing the SQLite volume. Copy `spear/env.example` to `spear/backend.env` and replace all placeholder secrets before starting.
 - Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.
 
 ## Troubleshooting
