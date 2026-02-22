@@ -10,7 +10,7 @@ SERVICES := $(sort $(patsubst %/compose.yml,%,$(wildcard */compose.yml)))
 # Compose command for a given service directory
 compose = docker compose -f $(1)/compose.yml
 
-.PHONY: help start-all stop-all status ports services
+.PHONY: help start-all stop-all status ports services prune-images
 
 help: ## Show this help
 	@echo "Usage: make <target>"
@@ -27,6 +27,7 @@ help: ## Show this help
 	@echo "  make start-all           Start all services"
 	@echo "  make stop-all            Stop all services"
 	@echo "  make status              Show status of all services"
+	@echo "  make prune-images        Delete unused/untagged service images"
 	@echo ""
 	@echo "Info:"
 	@echo "  make ports               Show default port assignments"
@@ -67,6 +68,25 @@ status: ## Show running containers for all services
 
 services: ## List discovered services
 	@for svc in $(SERVICES); do echo "  $$svc"; done
+
+prune-images: ## Delete unused/untagged images for discovered services
+	@echo "Pruning untagged (dangling) images..."
+	@docker image prune -f >/dev/null
+	@echo "Removing unused discovered service images..."
+	@images="$$(for svc in $(SERVICES); do docker compose -f $$svc/compose.yml config --images 2>/dev/null || true; done | awk 'NF' | sort -u)"; \
+	if [ -z "$$images" ]; then \
+		echo "No service images discovered."; \
+		exit 0; \
+	fi; \
+	removed=0; \
+	for image in $$images; do \
+		if docker image inspect "$$image" >/dev/null 2>&1 && [ -z "$$(docker ps -aq --filter ancestor=$$image)" ]; then \
+			echo "  removing $$image"; \
+			docker image rm "$$image" >/dev/null || true; \
+			removed=$$((removed + 1)); \
+		fi; \
+	done; \
+	echo "Removed $$removed unused discovered service image(s)."
 
 ports: ## Show default port assignments
 	@echo "Port  | Service              | Env var"
