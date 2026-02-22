@@ -36,14 +36,16 @@ docker compose -f <service>/compose.yml up -d
 ## Services at a glance
 | Service | Purpose | Default URL/Port | Config |
 | --- | --- | --- | --- |
-| Portainer | Docker management UI | http://localhost:9000, https://localhost:9443 (edge: 8001) | Volume `portainer_data` |
-| Bark | iOS push gateway | http://localhost:8087 | — |
+| Portainer | Docker management UI | http://localhost:9000, https://localhost:9443 (edge: 8000) | Volume `portainer_data` |
+| Bark | iOS push gateway | http://localhost:8080 | — |
 | Duck Free | DuckCoding availability notifier (uses Bark) | (no exposed port) | `duck-free/duck-free-config/.env.duck-free` |
-| Mermaid Live Editor | Diagram editor | http://localhost:8005 | — |
+| Mermaid Live Editor | Diagram editor | http://localhost:8083 | — |
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
-| Spear | Beacon Spear (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8080 | `spear/backend.env` (copy from `spear/env.example`), `spear/nginx.conf` |
-| Prism | Prism app (nginx gateway + backend + frontend) | http://localhost:80 | `prism/.env` (optional, copy from `prism/env.example`) |
-| Telemetry | OTEL collector + Prometheus + Grafana | Grafana http://localhost:3001; Prometheus http://localhost:9090; OTLP gRPC :4317; OTLP HTTP :4318 | `telemetry/telemetry-config/*`, volumes `prometheus-data`, `grafana-data` |
+| Spear | Beacon Spear (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8081 | `spear/backend.env` (copy from `spear/env.example`), `spear/nginx.conf` |
+| Prism | Prism app (nginx gateway + backend + frontend) | http://localhost:8082 | `prism/.env` (optional, copy from `prism/env.example`) |
+| Swiperflix | Swiperflix (nginx proxy + gateway + frontend) | http://localhost:8084 | `swiperflix/env.example` (copy to `swiperflix/.env`), `swiperflix/nginx.conf` |
+| Whisper | Last Whisper (Caddy proxy + backend + frontend) | http://localhost:8085 | `whisper/env.example` (copy to `whisper/.env`), `whisper/Caddyfile` |
+| Telemetry | OTEL collector + Prometheus + Grafana | Grafana http://localhost:3000; Prometheus http://localhost:9090; OTLP gRPC :4317; OTLP HTTP :4318 | `telemetry/telemetry-config/*`, volumes `prometheus-data`, `grafana-data` |
 
 ## Default port map
 
@@ -51,15 +53,17 @@ All ports are overridable via environment variables in each service's `.env` fil
 
 | Port | Service | Env var |
 |------|---------|---------|
-| 80   | Prism gateway (nginx) | `PRISM_HTTP_PORT` |
-| 3001 | Grafana | `GRAFANA_PORT` |
+| 3000 | Grafana | `GRAFANA_PORT` |
 | 4317 | OTLP gRPC | `OTLP_GRPC_PORT` |
 | 4318 | OTLP HTTP | `OTLP_HTTP_PORT` |
 | 5000 | Docker Registry | `REGISTRY_PORT` |
-| 8001 | Portainer edge | `PORTAINER_EDGE_PORT` |
-| 8005 | Mermaid | `MERMAID_PORT` |
-| 8080 | Spear (nginx proxy) | `SPEAR_PORT` |
-| 8087 | Bark | `BARK_PORT` |
+| 8000 | Portainer edge | `PORTAINER_EDGE_PORT` |
+| 8080 | Bark | `BARK_PORT` |
+| 8081 | Spear (nginx proxy) | `SPEAR_PORT` |
+| 8082 | Prism gateway (nginx) | `PRISM_HTTP_PORT` |
+| 8083 | Mermaid | `MERMAID_PORT` |
+| 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
+| 8085 | Whisper proxy | `WHISPER_PORT` |
 | 8889 | OTEL Prometheus exporter | `OTEL_METRICS_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9090 | Prometheus | `PROMETHEUS_PORT` |
@@ -74,8 +78,10 @@ All ports are overridable via environment variables in each service's `.env` fil
   - `telemetry-config/grafana-datasources.yml` wires Grafana to Prometheus; default Grafana creds `admin/admin`.
 - Duck Free: `.env.duck-free` must be created from the example before starting.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
-- Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `80`) and proxies internally to frontend/backend.
+- Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `8082`) and proxies internally to frontend/backend.
 - Spear: nginx reverse-proxies to internal backend (:8100) and frontend (:3100). Backend and frontend are built from local source (`../backend`, `../frontend`). Worker runs as a separate container sharing the SQLite volume. Copy `spear/env.example` to `spear/backend.env` and replace all placeholder secrets before starting.
+- Swiperflix: reverse proxy listens on host port `SWIPERFLIX_PORT` (default `8084`) and routes traffic to gateway/frontend.
+- Whisper: reverse proxy listens on host port `WHISPER_PORT` (default `8085`) and routes traffic to backend/frontend.
 - Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.
 
 ## Troubleshooting

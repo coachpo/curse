@@ -6,7 +6,7 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     ports:
-      - "${MERMAID_PORT:-8005}:8080"
+      - "${MERMAID_PORT:-8083}:8080"
     networks:
       - mermaid-network
 

@@ -5,7 +5,7 @@ services:
     container_name: portainer
     restart: always
     ports:
-      - "${PORTAINER_EDGE_PORT:-8001}:8000"
+      - "${PORTAINER_EDGE_PORT:-8000}:8000"
       - "${PORTAINER_PORT:-9000}:9000"
       - "${PORTAINER_HTTPS_PORT:-9443}:9443"
     volumes:

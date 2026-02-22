@@ -19,7 +19,9 @@ curse/
 ├── prism/               # Prism app (backend + frontend, pre-built images)
 ├── registry/            # Local Docker registry with delete + CORS enabled
 ├── spear/               # Beacon Spear (nginx → Django backend + worker + React frontend, SQLite)
+├── swiperflix/          # Swiperflix (nginx proxy + gateway + frontend)
 ├── telemetry/           # OTEL Collector → Prometheus → Grafana pipeline
+├── whisper/             # Last Whisper (Caddy proxy + backend + frontend)
 ├── Makefile             # Auto-discovers services, provides start/stop/restart/logs/status
 └── README.md
 ```
@@ -99,15 +101,17 @@ cd <service> && docker compose logs -f
 
 | Port | Service | Env var |
 |------|---------|---------|
-| 80   | Prism gateway (nginx) | `PRISM_HTTP_PORT` |
-| 3001 | Grafana | `GRAFANA_PORT` |
+| 3000 | Grafana | `GRAFANA_PORT` |
 | 4317 | OTLP gRPC | `OTLP_GRPC_PORT` |
 | 4318 | OTLP HTTP | `OTLP_HTTP_PORT` |
 | 5000 | Docker Registry | `REGISTRY_PORT` |
-| 8001 | Portainer edge | `PORTAINER_EDGE_PORT` |
-| 8005 | Mermaid | `MERMAID_PORT` |
-| 8080 | Spear (nginx proxy) | `SPEAR_PORT` |
-| 8087 | Bark | `BARK_PORT` |
+| 8000 | Portainer edge | `PORTAINER_EDGE_PORT` |
+| 8080 | Bark | `BARK_PORT` |
+| 8081 | Spear (nginx proxy) | `SPEAR_PORT` |
+| 8082 | Prism gateway (nginx) | `PRISM_HTTP_PORT` |
+| 8083 | Mermaid | `MERMAID_PORT` |
+| 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
+| 8085 | Whisper proxy | `WHISPER_PORT` |
 | 8889 | OTEL Prometheus exporter | `OTEL_METRICS_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9090 | Prometheus | `PROMETHEUS_PORT` |

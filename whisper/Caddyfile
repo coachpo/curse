@@ -1,0 +1,35 @@
+{
+    admin off
+}
+
+:80 {
+    encode zstd gzip
+
+    # Public API entrypoint for browser calls (e.g. /apis/v1/items).
+    handle_path /apis/* {
+        reverse_proxy backend:8000
+    }
+
+    # Optional direct health endpoint from outside.
+    handle /health {
+        reverse_proxy backend:8000
+    }
+
+    # Everything else goes to the frontend app.
+    handle {
+        reverse_proxy frontend:3000
+    }
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}
