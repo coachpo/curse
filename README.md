@@ -4,7 +4,6 @@ Self-hosted services packaged as separate Docker Compose bundles. All ports are 
 
 ## Prerequisites
 - Docker + Docker Compose v2 on the host.
-- (Duck Free) Copy `duck-free/duck-free-config/example.env` to `duck-free/duck-free-config/.env.duck-free` and fill your Bark credentials.
 - (Spear) Copy `spear/env.example` to `spear/backend.env` and fill in real values (`DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, etc.).
 
 ## How to run
@@ -38,7 +37,6 @@ docker compose -f <service>/compose.yml up -d
 | --- | --- | --- | --- |
 | Portainer | Docker management UI | http://localhost:9000, https://localhost:9443 (edge: 8000) | Volume `portainer_data` |
 | Bark | iOS push gateway | http://localhost:8080 | — |
-| Duck Free | DuckCoding availability notifier (uses Bark) | (no exposed port) | `duck-free/duck-free-config/.env.duck-free` |
 | Mermaid Live Editor | Diagram editor | http://localhost:8083 | — |
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
 | Spear | Beacon Spear (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8081 | `spear/backend.env` (copy from `spear/env.example`), `spear/nginx.conf` |
@@ -76,7 +74,6 @@ All ports are overridable via environment variables in each service's `.env` fil
   - `telemetry-config/otel-collector-config.yaml` sets endpoints and resource attributes (host defaults to `capy.lan`).
   - `telemetry-config/prometheus.yml` scrapes the collector; adjusts labels/targets as needed.
   - `telemetry-config/grafana-datasources.yml` wires Grafana to Prometheus; default Grafana creds `admin/admin`.
-- Duck Free: `.env.duck-free` must be created from the example before starting.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
 - Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `8082`) and proxies internally to frontend/backend.
 - Spear: nginx reverse-proxies to internal backend (:8100) and frontend (:3100). Backend and frontend are built from local source (`../backend`, `../frontend`). Worker runs as a separate container sharing the SQLite volume. Copy `spear/env.example` to `spear/backend.env` and replace all placeholder secrets before starting.

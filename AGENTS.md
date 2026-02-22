@@ -13,7 +13,6 @@ Docker Compose stack repo — collection of independently deployable self-hosted
 ```
 curse/
 ├── bark/                # iOS push gateway (Bark)
-├── duck-free/           # DuckCoding availability notifier → depends on Bark
 ├── mermaid/             # Mermaid Live Editor (diagram tool)
 ├── portainer/           # Docker management UI
 ├── prism/               # Prism app (backend + frontend, pre-built images)
@@ -50,7 +49,6 @@ spear/
 | Change ports | `compose.yml` in each service dir | All ports use `${ENV_VAR:-default}` pattern |
 | Telemetry tuning | `telemetry/telemetry-config/` | OTEL, Prometheus, Grafana configs |
 | Registry settings | `registry/registry-config/config.yml` | Delete, CORS, purging, proxy cache |
-| Service secrets | `<service>/env.example` → `<service>/.env` | duck-free uses `duck-free-config/.env.duck-free`; spear uses `backend.env` |
 | Spear routing | `spear/nginx.conf` | nginx reverse proxy rules (API → backend, SPA → frontend) |
 | Orchestration | `Makefile` (root) | `make start-<svc>`, `make stop-<svc>`, `make status`, `make ports` |
 
@@ -74,7 +72,6 @@ spear/
 - **Mermaid is ARM-only** — `platform: linux/arm64` hardcoded. Change if deploying to x86_64.
 - **Spear placeholder secrets** — `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, `TOKEN_HASH_KEY`, `CHANNEL_CONFIG_ENCRYPTION_KEY` in `spear/env.example` must be replaced.
 - **Spear builds from local source** — requires `../backend` and `../frontend` directories adjacent to the curse repo.
-- **Duck Free requires `.env.duck-free`** — hard exit if missing. Copy from `example.env` first.
 - **Don't add services to Makefile manually** — it auto-discovers `*/compose.yml`.
 
 ## COMMANDS
