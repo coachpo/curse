@@ -18,9 +18,9 @@ curse/
 ├── prism/               # Prism app (backend + frontend, pre-built images)
 ├── registry/            # Local Docker registry with delete + CORS enabled
 ├── spear/               # Beacon Spear (nginx → Django backend + worker + React frontend, SQLite)
-├── swiperflix/          # Swiperflix (nginx proxy + gateway + frontend)
+├── swiperflix/          # Swiperflix (nginx proxy + gateway + frontend, pre-built images)
 ├── telemetry/           # OTEL Collector → Prometheus → Grafana pipeline
-├── whisper/             # Last Whisper (Caddy proxy + backend + frontend)
+├── whisper/             # Last Whisper (Caddy proxy + backend + frontend, pre-built images)
 ├── Makefile             # Auto-discovers services, provides start/stop/restart/logs/status
 └── README.md
 ```
@@ -70,7 +70,7 @@ spear/
 - **Never change ports without checking the full port table** in README.
 - **Never use generic env var names** — always namespace with service prefix (e.g. `PRISM_*`, `SPEAR_*`).
 - **Mermaid is ARM-only** — `platform: linux/arm64` hardcoded. Change if deploying to x86_64.
-- **Spear placeholder secrets** — `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, `TOKEN_HASH_KEY`, `CHANNEL_CONFIG_ENCRYPTION_KEY` in `spear/env.example` must be replaced.
+- **Spear placeholder secrets** — `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, `TOKEN_HASH_KEY`, `CHANNEL_CONFIG_ENCRYPTION_KEY` in `spear/env.example` must be replaced. All runtime defaults are embedded in compose.yml.
 - **Spear builds from local source** — requires `../backend` and `../frontend` directories adjacent to the curse repo.
 - **Don't add services to Makefile manually** — it auto-discovers `*/compose.yml`.
 

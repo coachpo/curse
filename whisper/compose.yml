@@ -19,22 +19,18 @@ services:
       - backend_net
 
   backend:
-    image: "${BACKEND_IMAGE:-last-whisper-backend:prod}"
+    image: ghcr.io/coachpo/last-whisper-backend:latest
     container_name: lw-backend
-    build:
-      context: ../last-whisper-backend
-      dockerfile: Dockerfile
     restart: unless-stopped
     expose:
       - "8000"
     environment:
       ENVIRONMENT: production
-      LOG_LEVEL: "${BACKEND_LOG_LEVEL:-info}"
-      API_KEYS_CSV: "${BACKEND_API_KEYS_CSV}"
-      CORS_ORIGINS: "${BACKEND_CORS_ORIGINS}"
-      TTS_PROVIDER: "${BACKEND_TTS_PROVIDER:-google}"
-      TTS_SUPPORTED_LANGUAGES: "${BACKEND_TTS_SUPPORTED_LANGUAGES:-[\"fi\"]}"
-      DATABASE_URL: "${BACKEND_DATABASE_URL:-sqlite:///data/dictation.db}"
+      LOG_LEVEL: info
+      API_KEYS_CSV: ${BACKEND_API_KEYS_CSV}
+      TTS_PROVIDER: google
+      TTS_SUPPORTED_LANGUAGES: '["fi"]'
+      DATABASE_URL: sqlite:///data/dictation.db
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google_credentials
     volumes:
       - backend_data:/app/data
@@ -52,18 +48,8 @@ services:
       - backend_net
 
   frontend:
-    image: "${FRONTEND_IMAGE:-last-whisper-frontend:prod}"
+    image: ghcr.io/coachpo/last-whisper-frontend:latest
     container_name: lw-frontend
-    build:
-      context: ../last-whisper-frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: "${FRONTEND_NEXT_PUBLIC_API_URL:-/apis}"
-        NEXT_PUBLIC_API_KEY: "${FRONTEND_NEXT_PUBLIC_API_KEY}"
-        NEXT_PUBLIC_DEBUG_LOGGING: "${FRONTEND_NEXT_PUBLIC_DEBUG_LOGGING:-false}"
-        NODE_ENV: production
-        PORT: 3000
-        HOSTNAME: 0.0.0.0
     restart: unless-stopped
     expose:
       - "3000"
@@ -81,7 +67,7 @@ services:
 
 secrets:
   google_credentials:
-    file: "${GOOGLE_APPLICATION_CREDENTIALS_FILE:-./secrets/google-credentials.json}"
+    file: ${GOOGLE_APPLICATION_CREDENTIALS_FILE:-./secrets/google-credentials.json}
 
 volumes:
   backend_data:

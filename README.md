@@ -76,9 +76,9 @@ All ports are overridable via environment variables in each service's `.env` fil
   - `telemetry-config/grafana-datasources.yml` wires Grafana to Prometheus; default Grafana creds `admin/admin`.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
 - Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `8082`) and proxies internally to frontend/backend.
-- Spear: nginx reverse-proxies to internal backend (:8100) and frontend (:3100). Backend and frontend are built from local source (`../backend`, `../frontend`). Worker runs as a separate container sharing the SQLite volume. Copy `spear/env.example` to `spear/backend.env` and replace all placeholder secrets before starting.
-- Swiperflix: reverse proxy listens on host port `SWIPERFLIX_PORT` (default `8084`) and routes traffic to gateway/frontend.
-- Whisper: reverse proxy listens on host port `WHISPER_PORT` (default `8085`) and routes traffic to backend/frontend.
+- Spear: nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
+- Swiperflix: pre-built GHCR images. Reverse proxy on `SWIPERFLIX_PORT` (default `8084`). All runtime defaults embedded in compose; only OpenList credentials need `.env`.
+- Whisper: pre-built GHCR images. Caddy proxy on `WHISPER_PORT` (default `8085`). All runtime defaults embedded in compose; only `BACKEND_API_KEYS_CSV` and Google credentials JSON (`whisper/secrets/`) needed.
 - Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.
 
 ## Troubleshooting

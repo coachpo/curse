@@ -49,7 +49,7 @@ services:
       test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3100/healthz >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 5s
-      retries: 5
+      retries: 3
       start_period: 10s
 
   backend:
@@ -59,7 +59,25 @@ services:
     env_file:
       - ./backend.env
     environment:
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "*"
+      DATABASE_URL: sqlite:////data/db.sqlite3
+      SQLITE_TIMEOUT_SECONDS: "30"
       WEB_CONCURRENCY: "2"
+      JWT_ACCESS_TTL_SECONDS: "900"
+      JWT_REFRESH_TTL_SECONDS: "2592000"
+      ALLOW_USER_SIGNUP: "true"
+      REQUIRE_VERIFIED_EMAIL_FOR_INGEST: "true"
+      MAX_INGEST_BYTES: "1048576"
+      DELIVERY_MAX_ATTEMPTS: "10"
+      DELIVERY_BACKOFF_BASE_SECONDS: "5"
+      DELIVERY_BACKOFF_MAX_SECONDS: "1800"
+      BARK_REQUEST_TIMEOUT_SECONDS: "5"
+      BARK_BLOCK_PRIVATE_NETWORKS: "true"
+      NTFY_REQUEST_TIMEOUT_SECONDS: "5"
+      NTFY_BLOCK_PRIVATE_NETWORKS: "true"
+      MQTT_SOCKET_TIMEOUT_SECONDS: "5"
+      MQTT_BLOCK_PRIVATE_NETWORKS: "true"
     expose:
       - "8100"
     volumes:
@@ -86,6 +104,19 @@ services:
     command: ["python", "manage.py", "deliveries_worker"]
     env_file:
       - ./backend.env
+    environment:
+      DJANGO_DEBUG: "false"
+      DATABASE_URL: sqlite:////data/db.sqlite3
+      SQLITE_TIMEOUT_SECONDS: "30"
+      DELIVERY_MAX_ATTEMPTS: "10"
+      DELIVERY_BACKOFF_BASE_SECONDS: "5"
+      DELIVERY_BACKOFF_MAX_SECONDS: "1800"
+      BARK_REQUEST_TIMEOUT_SECONDS: "5"
+      BARK_BLOCK_PRIVATE_NETWORKS: "true"
+      NTFY_REQUEST_TIMEOUT_SECONDS: "5"
+      NTFY_BLOCK_PRIVATE_NETWORKS: "true"
+      MQTT_SOCKET_TIMEOUT_SECONDS: "5"
+      MQTT_BLOCK_PRIVATE_NETWORKS: "true"
     volumes:
       - sqlite_data:/data
     depends_on:
