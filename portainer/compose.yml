@@ -16,6 +16,8 @@ services:
 
 volumes:
   portainer_data:
+    # Use a fixed Docker volume name so data persists across compose project renames.
+    name: portainer_data
     driver: local
 
 networks:
