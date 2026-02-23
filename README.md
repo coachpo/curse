@@ -4,7 +4,7 @@ Self-hosted services packaged as separate Docker Compose bundles. All ports are 
 
 ## Prerequisites
 - Docker + Docker Compose v2 on the host.
-- (Spear) Copy `spear/env.example` to `spear/backend.env` and fill in real values (`DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, etc.).
+- (Herald) Copy `herald/backend.env.example` to `herald/backend.env` and fill in real values (`DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, etc.).
 
 ## How to run
 
@@ -39,7 +39,7 @@ docker compose -f <service>/compose.yml up -d
 | Bark | iOS push gateway | http://localhost:8080 | — |
 | Mermaid Live Editor | Diagram editor | http://localhost:8083 | — |
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
-| Spear | Beacon Spear (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8081 | `spear/backend.env` (copy from `spear/env.example`), `spear/nginx.conf` |
+| Herald | Herald (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8081 | `herald/backend.env` (copy from `herald/backend.env.example`), `herald/nginx.conf` |
 | Prism | Prism app (nginx gateway + backend + frontend) | http://localhost:8082 | `prism/.env` (optional, copy from `prism/env.example`) |
 | Swiperflix | Swiperflix (nginx proxy + gateway + frontend) | http://localhost:8084 | `swiperflix/env.example` (copy to `swiperflix/.env`), `swiperflix/nginx.conf` |
 | Whisper | Last Whisper (Caddy proxy + backend + frontend) | http://localhost:8085 | `whisper/env.example` (copy to `whisper/.env`), `whisper/Caddyfile` |
@@ -57,7 +57,7 @@ All ports are overridable via environment variables in each service's `.env` fil
 | 5000 | Docker Registry | `REGISTRY_PORT` |
 | 8000 | Portainer edge | `PORTAINER_EDGE_PORT` |
 | 8080 | Bark | `BARK_PORT` |
-| 8081 | Spear (nginx proxy) | `SPEAR_PORT` |
+| 8081 | Herald (nginx proxy) | `HERALD_PORT` |
 | 8082 | Prism gateway (nginx) | `PRISM_HTTP_PORT` |
 | 8083 | Mermaid | `MERMAID_PORT` |
 | 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
@@ -76,7 +76,7 @@ All ports are overridable via environment variables in each service's `.env` fil
   - `telemetry-config/grafana-datasources.yml` wires Grafana to Prometheus; default Grafana creds `admin/admin`.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
 - Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `8082`) and proxies internally to frontend/backend.
-- Spear: pulls pre-built GHCR images (`ghcr.io/coachpo/beacon-spear-backend:latest`, `ghcr.io/coachpo/beacon-spear-frontend:latest`) with `pull_policy: always`. nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults are embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
+- Herald: pulls pre-built GHCR images (`ghcr.io/coachpo/herald-backend:latest`, `ghcr.io/coachpo/herald-frontend:latest`) with `pull_policy: always`. nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults are embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
 - Swiperflix: pre-built GHCR images. Reverse proxy on `SWIPERFLIX_PORT` (default `8084`). All runtime defaults embedded in compose; only OpenList credentials need `.env`.
 - Whisper: pre-built GHCR images. Caddy proxy on `WHISPER_PORT` (default `8085`). All runtime defaults embedded in compose; only `BACKEND_API_KEYS_CSV` and Google credentials JSON (`whisper/secrets/`) needed.
 - Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.

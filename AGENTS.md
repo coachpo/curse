@@ -17,7 +17,7 @@ curse/
 ├── portainer/           # Docker management UI
 ├── prism/               # Prism app (backend + frontend, pre-built images)
 ├── registry/            # Local Docker registry with delete + CORS enabled
-├── spear/               # Beacon Spear (nginx → Django backend + worker + React frontend, SQLite)
+├── herald/              # Herald (nginx → Django backend + worker + React frontend, SQLite)
 ├── swiperflix/          # Swiperflix (nginx proxy + gateway + frontend, pre-built images)
 ├── telemetry/           # OTEL Collector → Prometheus → Grafana pipeline
 ├── whisper/             # Last Whisper (Caddy proxy + backend + frontend, pre-built images)
@@ -33,12 +33,12 @@ Each service follows the same pattern:
 └── env.example                  # optional, copy to .env
 ```
 
-Spear layout (pulls pre-built images from GHCR, no config subfolder):
+Herald layout (pulls pre-built images from GHCR, no config subfolder):
 ```
-spear/
+herald/
 ├── compose.yml          # nginx proxy + backend + frontend + worker
 ├── nginx.conf           # Reverse proxy config (API → backend, SPA → frontend)
-└── env.example          # Template — copy to backend.env
+└── backend.env.example  # Template — copy to backend.env
 ```
 
 ## WHERE TO LOOK
@@ -49,7 +49,7 @@ spear/
 | Change ports | `compose.yml` in each service dir | All ports use `${ENV_VAR:-default}` pattern |
 | Telemetry tuning | `telemetry/telemetry-config/` | OTEL, Prometheus, Grafana configs |
 | Registry settings | `registry/registry-config/config.yml` | Delete, CORS, purging, proxy cache |
-| Spear routing | `spear/nginx.conf` | nginx reverse proxy rules (API → backend, SPA → frontend) |
+| Herald routing | `herald/nginx.conf` | nginx reverse proxy rules (API → backend, SPA → frontend) |
 | Orchestration | `Makefile` (root) | `make start-<svc>`, `make stop-<svc>`, `make status`, `make ports` |
 
 ## CONVENTIONS
@@ -58,9 +58,9 @@ spear/
 - `.env` and `backend.env` files are gitignored. Always provide `env.example` as template.
 - Config folders sit beside their compose files so relative paths in YAML stay valid.
 - All services use `restart: unless-stopped` (portainer uses `always`).
-- Networks are defined per service; many use `<service>-network`, telemetry uses `curse-telemetry`, spear uses `beacon`, and prism uses the default project network.
+- Networks are defined per service; many use `<service>-network`, telemetry uses `curse-telemetry`, herald uses `herald`, and prism uses the default project network.
 - All host ports are configurable via `${ENV_VAR:-default}` in compose files.
-- Env var names are namespaced per service (e.g. `PRISM_HTTP_PORT`, `SPEAR_PORT`) to avoid collisions.
+- Env var names are namespaced per service (e.g. `PRISM_HTTP_PORT`, `HERALD_PORT`) to avoid collisions.
 - Use explicit `container_name` only where it adds operational clarity.
 - No start scripts — use `make start-<service>` or `cd <service> && docker compose up -d`.
 
@@ -68,10 +68,10 @@ spear/
 
 - **Never commit `.env` or `backend.env` files** — secrets only via gitignored files, templates in `env.example`.
 - **Never change ports without checking the full port table** in README.
-- **Never use generic env var names** — always namespace with service prefix (e.g. `PRISM_*`, `SPEAR_*`).
+- **Never use generic env var names** — always namespace with service prefix (e.g. `PRISM_*`, `HERALD_*`).
 - **Mermaid is ARM-only** — `platform: linux/arm64` hardcoded. Change if deploying to x86_64.
-- **Spear placeholder secrets** — `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, `TOKEN_HASH_KEY`, `CHANNEL_CONFIG_ENCRYPTION_KEY` in `spear/env.example` must be replaced. All runtime defaults are embedded in compose.yml.
-- **Spear does not build images locally** — it must pull `ghcr.io/coachpo/beacon-spear-backend:latest` and `ghcr.io/coachpo/beacon-spear-frontend:latest` from GHCR.
+- **Herald placeholder secrets** — `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, `TOKEN_HASH_KEY`, `CHANNEL_CONFIG_ENCRYPTION_KEY` in `herald/backend.env.example` must be replaced. All runtime defaults are embedded in compose.yml.
+- **Herald does not build images locally** — it must pull `ghcr.io/coachpo/herald-backend:latest` and `ghcr.io/coachpo/herald-frontend:latest` from GHCR.
 - **Don't add services to Makefile manually** — it auto-discovers `*/compose.yml`.
 
 ## COMMANDS
@@ -104,7 +104,7 @@ cd <service> && docker compose logs -f
 | 5000 | Docker Registry | `REGISTRY_PORT` |
 | 8000 | Portainer edge | `PORTAINER_EDGE_PORT` |
 | 8080 | Bark | `BARK_PORT` |
-| 8081 | Spear (nginx proxy) | `SPEAR_PORT` |
+| 8081 | Herald (nginx proxy) | `HERALD_PORT` |
 | 8082 | Prism gateway (nginx) | `PRISM_HTTP_PORT` |
 | 8083 | Mermaid | `MERMAID_PORT` |
 | 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |

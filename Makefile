@@ -97,7 +97,7 @@ ports: ## Show default port assignments
 	@echo "5000  | Docker Registry      | REGISTRY_PORT"
 	@echo "8000  | Portainer edge       | PORTAINER_EDGE_PORT"
 	@echo "8080  | Bark                 | BARK_PORT"
-	@echo "8081  | Spear (nginx proxy)  | SPEAR_PORT"
+	@echo "8081  | Herald (nginx proxy) | HERALD_PORT"
 	@echo "8082  | Prism gateway (nginx)| PRISM_HTTP_PORT"
 	@echo "8083  | Mermaid              | MERMAID_PORT"
 	@echo "8084  | Swiperflix proxy     | SWIPERFLIX_PORT"

@@ -23,5 +23,5 @@ __pycache__/
 # Node artifacts
 node_modules/
 
-# Spear backend secrets
+# Herald backend secrets
 **/backend.env

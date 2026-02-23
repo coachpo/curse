@@ -1,4 +1,4 @@
-name: beacon-spear
+name: herald
 
 services:
   reverse-proxy:
@@ -9,11 +9,11 @@ services:
       frontend:
         condition: service_healthy
     ports:
-      - "${SPEAR_PORT:-8081}:80"
+      - "${HERALD_PORT:-8081}:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      - beacon
+      - herald
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -35,7 +35,7 @@ services:
     expose:
       - "3100"
     networks:
-      - beacon
+      - herald
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -81,7 +81,7 @@ services:
     volumes:
       - sqlite_data:/data
     networks:
-      - beacon
+      - herald
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -120,7 +120,7 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - beacon
+      - herald
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -129,7 +129,7 @@ services:
       - no-new-privileges:true
 
 networks:
-  beacon:
+  herald:
     driver: bridge
 
 volumes:
