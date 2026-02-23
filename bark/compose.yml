@@ -6,8 +6,16 @@ services:
     restart: unless-stopped
     ports:
       - "${BARK_PORT:-8080}:8080"
+    volumes:
+      - bark_data:/data
     networks:
       - bark-network
+
+volumes:
+  bark_data:
+    # Use a fixed Docker volume name so Bark data persists across compose project renames.
+    name: bark_data
+    driver: local
 
 networks:
   bark-network:
