@@ -1,18 +1,50 @@
 name: prism
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: prism_v1
+    expose:
+      - "5432"
+    volumes:
+      - prism_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d prism_v1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   backend:
     image: ghcr.io/coachpo/prism-backend:latest
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      DATABASE_URL: sqlite+aiosqlite:///./data/gateway.db
-      HOST: 0.0.0.0
-      PORT: 8000
-      LOG_LEVEL: info
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/prism_v1}
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-8000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_SECRET: ${JWT_SECRET:-change-me-with-strong-random-value}
+      OTP_HMAC_SECRET: ${OTP_HMAC_SECRET:-change-me-with-strong-random-value}
+      API_KEY_HASH_SECRET: ${API_KEY_HASH_SECRET:-change-me-with-strong-random-value}
+      PROFILE_ENCRYPTION_SECRET: ${PROFILE_ENCRYPTION_SECRET:-change-me-with-strong-random-value}
+      OTP_DEBUG_RETURN_CODE: ${OTP_DEBUG_RETURN_CODE:-false}
+      PASSKEY_RP_ID: ${PASSKEY_RP_ID:-localhost}
+      PASSKEY_RP_NAME: ${PASSKEY_RP_NAME:-Prism}
+      PASSKEY_ORIGIN: ${PASSKEY_ORIGIN:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@prism.local}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
     expose:
       - "8000"
-    volumes:
-      - prism_data:/app/data
     healthcheck:
       test: ["CMD-SHELL", "curl -sS http://127.0.0.1:8000/health >/dev/null"]
       interval: 10s
@@ -55,4 +87,4 @@ services:
       start_period: 5s
 
 volumes:
-  prism_data:
+  prism_postgres_data:
