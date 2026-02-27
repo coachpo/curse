@@ -12,7 +12,7 @@ Local Development                    Production (Docker)
 
 Browser                              Browser
   │                                    │
-  ├──→ Frontend (localhost:3000)       ├──→ Reverse Proxy (:80/:443)
+  ├──→ Frontend (localhost:3000)       ├──→ Reverse Proxy (:APP_PORT)
   │    Dev server (Vite, etc.)         │    ├─ /api/*  → backend:PORT
   │    No proxy — calls backend        │    └─ /*      → frontend:PORT
   │    directly via CORS               │
@@ -67,7 +67,7 @@ Other clients (curl, Postman, etc.) also call the backend at `http://localhost:8
 
 ### Rules
 
-- Only the reverse proxy exposes host ports (80/443). Backend and frontend use `expose`, not `ports`.
+- Only the reverse proxy exposes host ports. Backend and frontend use `expose`, not `ports`.
 - Reverse proxy routes by path prefix — API paths to backend, everything else to frontend.
 - Same origin eliminates CORS for browser clients. Backend CORS can stay permissive for CLI/external consumers.
 - Frontend image serves a static build via nginx:alpine or caddy:alpine. Server config is baked into the image.
@@ -95,17 +95,17 @@ Other clients (curl, Postman, etc.) also call the backend at `http://localhost:8
 
     # API paths → backend
     handle /api/* {
-        reverse_proxy backend:{$BACKEND_PORT:8000}
+        reverse_proxy backend:8000
     }
 
     # Additional backend paths (if any)
     # handle /v1/* {
-    #     reverse_proxy backend:{$BACKEND_PORT:8000}
+    #     reverse_proxy backend:8000
     # }
 
     # Everything else → frontend
     handle {
-        reverse_proxy frontend:{$FRONTEND_PORT:3000}
+        reverse_proxy frontend:3000
     }
 }
 ```
@@ -114,7 +114,7 @@ Other clients (curl, Postman, etc.) also call the backend at `http://localhost:8
 
 - `{$DOMAIN:localhost}` reads from env var, defaults to `localhost`.
   - `localhost` → Caddy serves HTTP only (no auto-HTTPS).
-  - A real domain → Caddy automatically provisions TLS via Let's Encrypt.
+  - A real domain + public 80/443 reachability → Caddy can auto-provision TLS via Let's Encrypt.
 - More specific `handle` blocks match first. The bare `handle` is the catch-all.
 - Frontend container handles SPA routing internally (e.g., nginx `try_files`).
 - No `uri strip_prefix` unless the backend doesn't expect the path prefix.
@@ -128,7 +128,7 @@ If the frontend is not a separate container but static files copied into the Cad
     encode gzip zstd
 
     handle /api/* {
-        reverse_proxy backend:{$BACKEND_PORT:8000}
+        reverse_proxy backend:8000
     }
 
     handle {
@@ -146,24 +146,32 @@ If the frontend is not a separate container but static files copied into the Cad
 ```yaml
 services:
   backend:
-    image: ${BACKEND_IMAGE}
+    image: ghcr.io/org/project-backend:latest
     restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/app.db}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@example.com}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
     expose:
-      - "${BACKEND_PORT:-8000}"
+      - "8000"
     volumes:
       - app_data:/app/data
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:${BACKEND_PORT:-8000}/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
 
   frontend:
-    image: ${FRONTEND_IMAGE}
+    image: ghcr.io/org/project-frontend:latest
     restart: unless-stopped
     expose:
-      - "${FRONTEND_PORT:-3000}"
+      - "3000"
     depends_on:
       backend:
         condition: service_healthy
@@ -172,8 +180,7 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
+      - "${APP_PORT:-8080}:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -191,6 +198,8 @@ volumes:
 ### Design Decisions
 
 - `expose` (not `ports`) for backend/frontend — only Caddy is reachable from the host.
+- Backend/frontend image tags are fixed in Compose to avoid unnecessary env configuration.
+- Most runtime values use sane defaults (`:-...`) so deployers only set what they actually need.
 - `condition: service_healthy` gates startup on actual readiness, not just container start.
 - `caddy_data` persists TLS certificates across restarts.
 - `app_data` persists the database. Use a named volume (not a bind-mounted file) to avoid inode replacement issues with SQLite.
@@ -202,29 +211,45 @@ volumes:
 ```bash
 # .env.example
 
-# --- Images ---
-BACKEND_IMAGE=ghcr.io/org/project-backend:latest
-FRONTEND_IMAGE=ghcr.io/org/project-frontend:latest
+# --- App entrypoint ---
+DOMAIN=localhost
+APP_PORT=8080
 
-# --- Caddy ---
-DOMAIN=localhost          # Real domain enables auto-HTTPS
-HTTP_PORT=80
-HTTPS_PORT=443
+# --- Backend data ---
+DATABASE_URL=sqlite:////app/data/app.db
+
+# --- SMTP (required if app sends email/OTP/reset links) ---
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=noreply@example.com
+SMTP_USE_TLS=true
 ```
 
 ### What Goes in .env
 
-Only host-facing, deployment-specific values:
-- Docker image references (registry, tag)
-- Domain name
-- Host-bound ports
+Only user-managed, deployment-specific values:
+- Values that differ by environment and have no safe universal default (e.g., `DATABASE_URL`, SMTP credentials).
+- Host entrypoint settings that users actually change (e.g., `APP_PORT`, `DOMAIN`).
+- Secrets required for runtime integrations (SMTP/API keys/etc.).
+
+Quick include/exclude examples:
+
+| Config | Put in `.env.example`? | Why |
+|---|---|---|
+| `APP_PORT` | Yes | User may need a different host port |
+| `DATABASE_URL` | Yes | Environment-specific data source |
+| `SMTP_*` | Yes | External integration credentials/settings |
+| Image tags (`ghcr.io/...:latest`) | No | Release wiring belongs in `compose.yml` |
+| Internal ports (`8000`, `3000`) | No | Application runtime contract, not user input |
 
 ### What Does NOT Go in .env
 
+- Image tags/version pins — keep them in `compose.yml` so deployers do not manage release wiring.
 - Internal service hostnames (`backend`, `frontend`) — Docker DNS names, never change.
-- Internal container ports (`8000`, `3000`) — fixed by Dockerfile.
-- Database paths — fixed path inside container.
-- Network names — unnecessary unless integrating with external stacks.
+- Internal container ports (`8000`, `3000`) — fixed by container images.
+- Network names and most infrastructure wiring — keep these in Compose defaults.
 
 ---
 
@@ -357,4 +382,6 @@ Before deploying, verify:
 - [ ] Named volumes exist for database and Caddy TLS data.
 - [ ] Healthchecks are defined for backend (and optionally frontend).
 - [ ] `.env.example` documents all required variables.
+- [ ] `.env.example` contains only user-managed variables (e.g., `APP_PORT`, `DATABASE_URL`, `SMTP_*`).
+- [ ] Image tags and internal wiring stay in `compose.yml`, not `.env.example`.
 - [ ] `DOMAIN` defaults to `localhost` for local Docker testing.
