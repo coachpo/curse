@@ -102,6 +102,7 @@ ports: ## Show default port assignments
 	@echo "8083  | Mermaid              | MERMAID_PORT"
 	@echo "8084  | Swiperflix proxy     | SWIPERFLIX_PORT"
 	@echo "8085  | Whisper proxy        | WHISPER_PORT"
+	@echo "8086  | AssppWeb             | ASSPP_PORT"
 	@echo "8889  | OTEL Prometheus      | OTEL_METRICS_PORT"
 	@echo "9000  | Portainer UI         | PORTAINER_PORT"
 	@echo "9090  | Prometheus           | PROMETHEUS_PORT"

@@ -1,0 +1,34 @@
+services:
+  asspp:
+    image: ghcr.io/lakr233/assppweb:latest
+    restart: unless-stopped
+    ports:
+      - "${ASSPP_PORT:-8086}:8080"
+    environment:
+      DATA_DIR: /data
+      PORT: "8080"
+      PUBLIC_BASE_URL: ${ASSPP_PUBLIC_BASE_URL:-}
+      UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT: ${ASSPP_DISABLE_HTTPS_REDIRECT:-false}
+      AUTO_CLEANUP_DAYS: ${ASSPP_AUTO_CLEANUP_DAYS:-0}
+      AUTO_CLEANUP_MAX_MB: ${ASSPP_AUTO_CLEANUP_MAX_MB:-0}
+      MAX_DOWNLOAD_MB: ${ASSPP_MAX_DOWNLOAD_MB:-0}
+      DOWNLOAD_THREADS: ${ASSPP_DOWNLOAD_THREADS:-8}
+      ACCESS_PASSWORD: ${ASSPP_ACCESS_PASSWORD:-}
+    volumes:
+      - asspp_data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: 128m
+        max-file: "5"
+    networks:
+      - asspp-network
+
+volumes:
+  asspp_data:
+    name: asspp_data
+    driver: local
+
+networks:
+  asspp-network:
+    driver: bridge

@@ -37,6 +37,7 @@ docker compose -f <service>/compose.yml up -d
 | --- | --- | --- | --- |
 | Portainer | Docker management UI | http://localhost:9000, https://localhost:9443 (edge: 8000) | Volume `portainer_data` |
 | Bark | iOS push gateway | http://localhost:8080 | — |
+| AssppWeb | iOS app acquisition and IPA install web UI | http://localhost:8086 | `asspp/env.example` (copy to `asspp/.env`, optional) |
 | Mermaid Live Editor | Diagram editor | http://localhost:8083 | — |
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
 | Herald | Herald (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8081 | `herald/backend.env` (copy from `herald/backend.env.example`), `herald/nginx.conf` |
@@ -62,6 +63,7 @@ All ports are overridable via environment variables in each service's `.env` fil
 | 8083 | Mermaid | `MERMAID_PORT` |
 | 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
 | 8085 | Whisper proxy | `WHISPER_PORT` |
+| 8086 | AssppWeb | `ASSPP_PORT` |
 | 8889 | OTEL Prometheus exporter | `OTEL_METRICS_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9090 | Prometheus | `PROMETHEUS_PORT` |
@@ -79,6 +81,7 @@ All ports are overridable via environment variables in each service's `.env` fil
 - Herald: pulls pre-built GHCR images (`ghcr.io/coachpo/herald-backend:latest`, `ghcr.io/coachpo/herald-frontend:latest`) with `pull_policy: always`. nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults are embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
 - Swiperflix: pre-built GHCR images. Reverse proxy on `SWIPERFLIX_PORT` (default `8084`). All runtime defaults embedded in compose; only OpenList credentials need `.env`.
 - Whisper: pre-built GHCR images. Caddy proxy on `WHISPER_PORT` (default `8085`). All runtime defaults embedded in compose; only `BACKEND_API_KEYS_CSV` and Google credentials JSON (`whisper/secrets/`) needed.
+- AssppWeb: pre-built GHCR image (`ghcr.io/lakr233/assppweb:latest`). UI listens on `ASSPP_PORT` (default `8086`); optional behavior/security tuning is exposed in `asspp/env.example`.
 - Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.
 
 ## Troubleshooting
