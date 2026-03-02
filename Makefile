@@ -18,7 +18,39 @@ define PRINT_RUNNING_PORTS
 	@if command -v jq >/dev/null 2>&1; then \
 		ports="$$(docker compose -f $(1)/compose.yml ps --format json 2>/dev/null | jq -r '.[] | select((.Publishers | type) == "array" and (.Publishers | length) > 0) | "  - \(.Service): " + (.Publishers | map((if .URL and .URL != "" then .URL + ":" else "" end) + ((.PublishedPort // "unknown")|tostring) + "->" + ((.TargetPort // "unknown")|tostring) + "/" + ((.Protocol // "tcp")|tostring)) | join(", "))' 2>/dev/null || true)"; \
 	else \
-		ports="$$(docker compose -f $(1)/compose.yml ps --format '{{.Service}}|{{.Publishers}}' 2>/dev/null | awk -F'|' '$$2 != "" && $$2 != "[]" {print "  - " $$1 ": " $$2}')"; \
+		ports="$$(docker compose -f $(1)/compose.yml ps --format '{{.Service}}|{{.Publishers}}' 2>/dev/null | awk -F'|' '\
+			$$2 != "" && $$2 != "[]" { \
+				service = $$1; \
+				pubs = $$2; \
+				if (pubs ~ /\{[^}]+\}/) { \
+					gsub(/^\[/, "", pubs); \
+					gsub(/\]$$/, "", pubs); \
+					gsub(/\} \{/, "}\n{", pubs); \
+					n = split(pubs, items, /\n/); \
+					out = ""; \
+					for (i = 1; i <= n; i++) { \
+						item = items[i]; \
+						gsub(/[{}]/, "", item); \
+						gsub(/^[[:space:]]+|[[:space:]]+$$/, "", item); \
+						if (item == "") continue; \
+						m = split(item, f, /[[:space:]]+/); \
+						host = (m >= 1 && f[1] != "" ? f[1] : "0.0.0.0"); \
+						target = (m >= 2 && f[2] != "" ? f[2] : "unknown"); \
+						published = (m >= 3 && f[3] != "" ? f[3] : "unknown"); \
+						proto = (m >= 4 && f[4] != "" ? f[4] : "tcp"); \
+						if (host == "*") host = "0.0.0.0"; \
+						if (host ~ /:/ && host !~ /^\[.*\]$$/) host = "[" host "]"; \
+						entry = host ":" published "->" target "/" proto; \
+						out = (out == "" ? entry : out ", " entry); \
+					} \
+					if (out != "") print "  - " service ": " out; \
+				} else { \
+					gsub(/^\[/, "", pubs); \
+					gsub(/\]$$/, "", pubs); \
+					print "  - " service ": " pubs; \
+				} \
+			} \
+		')"; \
 	fi; \
 	if [ -n "$$ports" ]; then \
 		echo "[$(1)] running on:"; \
