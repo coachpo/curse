@@ -1,0 +1,73 @@
+name: prism-b
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: prism_b_v1
+    expose:
+      - "5432"
+    volumes:
+      - prism_b_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d prism_b_v1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    image: ghcr.io/coachpo/prism-backend:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./backend.env
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sS http://127.0.0.1:8000/health >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  frontend:
+    image: ghcr.io/coachpo/prism-frontend:latest
+    restart: unless-stopped
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sS http://127.0.0.1:3000/health >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  reverse-proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${PRISM_B_PORT:-8088}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sS http://127.0.0.1/health >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  prism_b_postgres_data:

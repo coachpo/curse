@@ -150,5 +150,6 @@ ports: ## Show default port assignments
 	@echo "8085  | Whisper (caddy)     | WHISPER_PORT         | Dictation training platform                   | https://github.com/coachpo/last-whisper"
 	@echo "8086  | AssppWeb            | ASSPP_PORT           | iOS IPA install/acquisition web UI            | -"
 	@echo "8087  | Clay                | CLAY_PORT            | OpenAI-compatible API proxy                   | https://github.com/coachpo/clay"
+	@echo "8088  | Prism B (nginx)     | PRISM_B_PORT         | Prism clone for A/B testing                   | https://github.com/coachpo/prism"
 	@echo "9000  | Portainer UI        | PORTAINER_PORT       | Docker management dashboard                   | -"
 	@echo "9443  | Portainer HTTPS     | PORTAINER_HTTPS_PORT | Docker management dashboard (HTTPS)           | -"
