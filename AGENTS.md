@@ -1,95 +1,117 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-02-22
-**Commit:** 800c33a
+**Generated:** 2026-03-02
+**Commit:** f3d3a97
 **Branch:** main
 
 ## OVERVIEW
 
-Docker Compose stack repo — collection of independently deployable self-hosted services. No application code; purely infrastructure configs (YAML). Target host: `capy.lan` (ARM/linux). Services auto-discovered by Makefile via `*/compose.yml` glob.
+Docker Compose infrastructure monorepo for self-hosted services. No application source is maintained here; each top-level service directory provides a deployable stack via `compose.yml`. Primary deployment target is `capy.lan` (ARM/Linux).
 
 ## STRUCTURE
 
 ```
 curse/
-├── bark/                # iOS push gateway (Bark)
-├── mermaid/             # Mermaid Live Editor (diagram tool)
-├── portainer/           # Docker management UI
-├── prism/               # Prism app (backend + frontend, pre-built images)
-├── registry/            # Local Docker registry with delete + CORS enabled
-├── herald/              # Herald (nginx → Django backend + worker + React frontend, SQLite)
-├── swiperflix/          # Swiperflix (nginx proxy + gateway + frontend, pre-built images)
-├── whisper/             # Last Whisper (Caddy proxy + backend + frontend, pre-built images)
-├── Makefile             # Auto-discovers services, provides start/stop/restart/logs/status
-└── README.md
+├── asspp/               # AssppWeb (IPA install/acquisition UI)
+├── bark/                # Bark push gateway
+├── clay/                # Clay OpenAI-compatible proxy
+├── herald/              # Herald (nginx + backend + frontend + worker)
+├── mermaid/             # Mermaid Live Editor (ARM pinned)
+├── portainer/           # Portainer CE
+├── prism/               # Prism (nginx + backend + frontend + postgres)
+├── registry/            # Local Docker registry + custom config
+├── swiperflix/          # Swiperflix (nginx + gateway + frontend)
+├── whisper/             # Last Whisper (Caddy + backend + frontend)
+├── Makefile             # Auto-discovers services and generates make targets
+├── README.md            # Canonical service table + ports + runbook
+└── AGENTS.md
 ```
 
-Each service follows the same pattern:
+Common service layout:
+
 ```
 <service>/
-├── compose.yml                  # Docker Compose definition
-├── <service>-config/            # optional config subfolder
-└── env.example                  # optional, copy to .env
-```
-
-Herald layout (pulls pre-built images from GHCR, no config subfolder):
-```
-herald/
-├── compose.yml          # nginx proxy + backend + frontend + worker
-├── nginx.conf           # Reverse proxy config (API → backend, SPA → frontend)
-└── backend.env.example  # Template — copy to backend.env
+├── compose.yml                  # Required (discovery boundary)
+├── env.example                  # Optional template for .env
+├── backend.env.example          # Optional template for backend.env
+├── nginx.conf | Caddyfile       # Optional edge proxy config
+└── <service>-config/            # Optional nested config directory
 ```
 
 ## WHERE TO LOOK
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add a new service | Create `<name>/compose.yml` | Auto-discovered by Makefile — no edits needed |
-| Change ports | `compose.yml` in each service dir | All ports use `${ENV_VAR:-default}` pattern |
-| Registry settings | `registry/registry-config/config.yml` | Delete, CORS, purging, proxy cache |
-| Herald routing | `herald/nginx.conf` | nginx reverse proxy rules (API → backend, SPA → frontend) |
-| Orchestration | `Makefile` (root) | `make start-<svc>`, `make stop-<svc>`, `make status`, `make ports` |
+| Add a new service | `<name>/compose.yml` | Must be top-level; Makefile scans only `*/compose.yml` |
+| Start/stop services | `Makefile` | `start-<svc>`, `stop-<svc>`, `restart-<svc>`, `logs-<svc>` |
+| Runtime port bindings | `make start-<svc>` output or `docker compose ... ps` | `make ports` is defaults table, not live bindings |
+| Port defaults table | `README.md` + `Makefile:ports` | Keep both in sync when adding/changing ports |
+| Reverse proxy routes | `herald/nginx.conf`, `prism/nginx.conf`, `swiperflix/nginx.conf`, `whisper/Caddyfile` | API/UI path behavior lives here |
+| Registry behavior | `registry/registry-config/config.yml` | Delete + CORS + upload purging |
+| Herald runtime secrets | `herald/backend.env.example` -> `herald/backend.env` | Replace placeholders before deploy |
+| Prism runtime secrets | `prism/backend.env.example` -> `prism/backend.env` | File is named `backend.env.example` (not `env.example`) |
+| Whisper credential path | `whisper/env.example` + `whisper/secrets/` | Secret file path defaults to `./secrets/google-credentials.json` |
+
+## CODE MAP
+
+| Symbol | Type | Location | Role |
+|--------|------|----------|------|
+| `SERVICES` | Make variable | `Makefile:8` | Service discovery from `*/compose.yml` |
+| `compose` | Make macro | `Makefile:11` | Canonical compose invocation per service |
+| `PRINT_RUNNING_PORTS` | Make macro | `Makefile:17` | Prints runtime published ports after start/restart |
+| `SERVICE_TARGETS` | Make macro | `Makefile:54` | Generates per-service lifecycle/log targets |
+| `start-all` / `stop-all` | Make targets | `Makefile:75`, `Makefile:77` | Bulk lifecycle over discovered services |
+| `status` | Make target | `Makefile:79` | Shows per-service container state |
+| `ports` | Make target | `Makefile:108` | Static defaults and env-var mapping table |
 
 ## CONVENTIONS
 
-- Compose files are named `compose.yml` (modern Docker Compose v2 convention).
-- `.env` and `backend.env` files are gitignored. Always provide `env.example` as template.
-- Config folders sit beside their compose files so relative paths in YAML stay valid.
-- All services use `restart: unless-stopped` (portainer uses `always`).
-- Networks are defined per service; many use `<service>-network`, herald uses `herald`, and prism uses the default project network.
-- All host ports are configurable via `${ENV_VAR:-default}` in compose files.
-- Env var names are namespaced per service (e.g. `PRISM_PORT`, `HERALD_PORT`) to avoid collisions.
-- Use explicit `container_name` only where it adds operational clarity.
-- No start scripts — use `make start-<service>` or `cd <service> && docker compose up -d`.
+- Compose files are named `compose.yml` and live in top-level service directories.
+- Host ports use `${SERVICE_PORT:-default}` interpolation in each service `ports` stanza.
+- Environment variables are namespaced per service (`HERALD_*`, `PRISM_*`, `ASSPP_*`, etc.).
+- `.env` and `backend.env` are gitignored; commit only template files (`env.example`, `backend.env.example`).
+- Restart policy is `unless-stopped` except Portainer (`always`).
+- Multi-container services expose internal ports and publish host ports only at the edge proxy.
+- `make start-<service>` always runs `docker compose pull` before `up -d`.
+- Healthchecks in compose files are runtime probes; there is no repo-level test framework/CI workflow.
+- Explicit `name:` is used only for selected stacks (`herald`, `prism`, `clay`).
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
-- **Never commit `.env` or `backend.env` files** — secrets only via gitignored files, templates in `env.example`.
-- **Never change ports without checking the full port table** in README.
-- **Never use generic env var names** — always namespace with service prefix (e.g. `PRISM_*`, `HERALD_*`).
-- **Mermaid is ARM-only** — `platform: linux/arm64` hardcoded. Change if deploying to x86_64.
-- **Herald placeholder secrets** — `DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, `TOKEN_HASH_KEY`, `CHANNEL_CONFIG_ENCRYPTION_KEY` in `herald/backend.env.example` must be replaced. All runtime defaults are embedded in compose.yml.
-- **Herald does not build images locally** — it must pull `ghcr.io/coachpo/herald-backend:latest` and `ghcr.io/coachpo/herald-frontend:latest` from GHCR.
-- **Don't add services to Makefile manually** — it auto-discovers `*/compose.yml`.
+- Never commit `.env`, `backend.env`, or real credential material.
+- Never add services manually to `Makefile`; discovery is automatic from `*/compose.yml`.
+- Never place new services under nested paths if you expect make auto-discovery.
+- Never change default ports without updating both `README.md` and `Makefile:ports`.
+- Never use non-namespaced env vars that can collide across services.
+- Mermaid is pinned to `platform: linux/arm64`; do not remove without validating target architecture.
+- Herald and Prism use `backend.env` runtime files; do not rename templates to `env.example` without aligning compose `env_file`.
+
+## UNIQUE STYLES
+
+- Infra-only repo: orchestrates pre-built images; does not build application code locally.
+- Service ownership boundary is the directory containing `compose.yml`; keep config artifacts co-located.
+- Security posture differs by service: Herald applies `read_only`, `tmpfs`, and `no-new-privileges`; others are lighter.
+- Proxy flavor varies by service (nginx vs Caddy); route semantics are service-specific.
 
 ## COMMANDS
 
 ```bash
-# Preferred: use Makefile
-make start-<service>       # start one
-make stop-<service>        # stop one
-make restart-<service>     # restart one
-make logs-<service>        # tail logs
-make start-all             # start everything
-make stop-all              # stop everything
-make status                # show all containers
-make ports                 # show port assignments
-make services              # list discovered services
+# Preferred lifecycle interface
+make services
+make start-<service>
+make stop-<service>
+make restart-<service>
+make logs-<service>
+make start-all
+make stop-all
+make status
+make ports
+make prune-images
 
-# Or compose directly
-cd <service> && docker compose up -d
-cd <service> && docker compose down
-cd <service> && docker compose logs -f
+# Direct compose (one service)
+docker compose -f <service>/compose.yml up -d
+docker compose -f <service>/compose.yml down
+docker compose -f <service>/compose.yml logs -f
 ```
 
 ## PORT MAP
@@ -104,5 +126,7 @@ cd <service> && docker compose logs -f
 | 8083 | Mermaid | `MERMAID_PORT` |
 | 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
 | 8085 | Whisper proxy | `WHISPER_PORT` |
+| 8086 | AssppWeb | `ASSPP_PORT` |
+| 8087 | Clay | `CLAY_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |

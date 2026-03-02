@@ -5,7 +5,7 @@ services:
     image: ghcr.io/coachpo/clay:latest
     restart: unless-stopped
     ports:
-      - "${CLAY_PORT:-8087}:8082"
+      - "${CLAY_PORT:-8087}:8000"
     env_file:
       - ./.env
     networks:
