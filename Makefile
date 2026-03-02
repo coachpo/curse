@@ -12,6 +12,22 @@ compose = docker compose -f $(1)/compose.yml
 
 .PHONY: help start-all stop-all status ports services prune-images
 
+# Print published host ports for a service after start/restart.
+# Uses runtime data from `docker compose ps --format json` to reflect real bindings.
+define PRINT_RUNNING_PORTS
+	@if command -v jq >/dev/null 2>&1; then \
+		ports="$$(docker compose -f $(1)/compose.yml ps --format json 2>/dev/null | jq -r '.[] | select((.Publishers | type) == "array" and (.Publishers | length) > 0) | "  - \(.Service): " + (.Publishers | map((if .URL and .URL != "" then .URL + ":" else "" end) + ((.PublishedPort // "unknown")|tostring) + "->" + ((.TargetPort // "unknown")|tostring) + "/" + ((.Protocol // "tcp")|tostring)) | join(", "))' 2>/dev/null || true)"; \
+	else \
+		ports="$$(docker compose -f $(1)/compose.yml ps --format '{{.Service}}|{{.Publishers}}' 2>/dev/null | awk -F'|' '$$2 != "" && $$2 != "[]" {print "  - " $$1 ": " $$2}')"; \
+	fi; \
+	if [ -n "$$ports" ]; then \
+		echo "[$(1)] running on:"; \
+		echo "$$ports"; \
+	else \
+		echo "[$(1)] started (no published host ports detected)."; \
+	fi
+endef
+
 help: ## Show this help
 	@echo "Usage: make <target>"
 	@echo ""
@@ -41,6 +57,7 @@ define SERVICE_TARGETS
 start-$(1):
 	$$(call compose,$(1)) pull
 	$$(call compose,$(1)) up -d
+	$$(call PRINT_RUNNING_PORTS,$(1))
 
 stop-$(1):
 	$$(call compose,$(1)) down
@@ -103,6 +120,7 @@ ports: ## Show default port assignments
 	@echo "8084  | Swiperflix proxy     | SWIPERFLIX_PORT"
 	@echo "8085  | Whisper proxy        | WHISPER_PORT"
 	@echo "8086  | AssppWeb             | ASSPP_PORT"
+	@echo "8087  | Clay                 | CLAY_PORT"
 	@echo "8889  | OTEL Prometheus      | OTEL_METRICS_PORT"
 	@echo "9000  | Portainer UI         | PORTAINER_PORT"
 	@echo "9090  | Prometheus           | PROMETHEUS_PORT"

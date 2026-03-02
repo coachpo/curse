@@ -1,0 +1,16 @@
+name: clay
+
+services:
+  clay:
+    image: ghcr.io/coachpo/clay:latest
+    restart: unless-stopped
+    ports:
+      - "${CLAY_PORT:-8087}:8082"
+    env_file:
+      - ./.env
+    networks:
+      - clay-network
+
+networks:
+  clay-network:
+    driver: bridge
