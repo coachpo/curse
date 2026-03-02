@@ -45,7 +45,6 @@ docker compose -f <service>/compose.yml up -d
 | Clay | Clay OpenAI-compatible proxy | http://localhost:8087 | `clay/env.example` (copy to `clay/.env`) |
 | Swiperflix | Swiperflix (nginx proxy + gateway + frontend) | http://localhost:8084 | `swiperflix/env.example` (copy to `swiperflix/.env`), `swiperflix/nginx.conf` |
 | Whisper | Last Whisper (Caddy proxy + backend + frontend) | http://localhost:8085 | `whisper/env.example` (copy to `whisper/.env`), `whisper/Caddyfile` |
-| Telemetry | OTEL collector + Prometheus + Grafana | Grafana http://localhost:3000; Prometheus http://localhost:9090; OTLP gRPC :4317; OTLP HTTP :4318 | `telemetry/telemetry-config/*`, volumes `prometheus-data`, `grafana-data` |
 
 ## Default port map
 
@@ -53,33 +52,23 @@ All ports are overridable via environment variables in each service's `.env` fil
 
 | Port | Service | Env var |
 |------|---------|---------|
-| 3000 | Grafana | `GRAFANA_PORT` |
-| 4317 | OTLP gRPC | `OTLP_GRPC_PORT` |
-| 4318 | OTLP HTTP | `OTLP_HTTP_PORT` |
 | 5000 | Docker Registry | `REGISTRY_PORT` |
 | 8000 | Portainer edge | `PORTAINER_EDGE_PORT` |
 | 8080 | Bark | `BARK_PORT` |
 | 8081 | Herald (nginx proxy) | `HERALD_PORT` |
-| 8082 | Prism gateway (nginx) | `PRISM_HTTP_PORT` |
+| 8082 | Prism gateway (nginx) | `PRISM_PORT` |
 | 8083 | Mermaid | `MERMAID_PORT` |
 | 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
 | 8085 | Whisper proxy | `WHISPER_PORT` |
 | 8086 | AssppWeb | `ASSPP_PORT` |
 | 8087 | Clay | `CLAY_PORT` |
-| 8889 | OTEL Prometheus exporter | `OTEL_METRICS_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
-| 9090 | Prometheus | `PROMETHEUS_PORT` |
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
-| 13133 | OTEL health check | `OTEL_HEALTH_PORT` |
 
 ## Configuration notes
 - Config folders sit beside their Compose files, so relative paths in YAML stay valid.
-- Telemetry stack:
-  - `telemetry-config/otel-collector-config.yaml` sets endpoints and resource attributes (host defaults to `capy.lan`).
-  - `telemetry-config/prometheus.yml` scrapes the collector; adjusts labels/targets as needed.
-  - `telemetry-config/grafana-datasources.yml` wires Grafana to Prometheus; default Grafana creds `admin/admin`.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
-- Prism: gateway (nginx) listens on host port `PRISM_HTTP_PORT` (default `8082`) and proxies internally to frontend/backend.
+- Prism: gateway (nginx) listens on host port `PRISM_PORT` (default `8082`) and proxies internally to frontend/backend.
 - Clay: pre-built GHCR image (`ghcr.io/coachpo/clay:latest`). Service listens on `CLAY_PORT` (default `8087`) and reads runtime config/secrets from `clay/.env`.
 - Herald: pulls pre-built GHCR images (`ghcr.io/coachpo/herald-backend:latest`, `ghcr.io/coachpo/herald-frontend:latest`) with `pull_policy: always`. nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults are embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
 - Swiperflix: pre-built GHCR images. Reverse proxy on `SWIPERFLIX_PORT` (default `8084`). All runtime defaults embedded in compose; only OpenList credentials need `.env`.
