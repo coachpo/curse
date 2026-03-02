@@ -119,23 +119,28 @@ services: ## List discovered services
 	@for svc in $(SERVICES); do echo "  $$svc"; done
 
 prune-images: ## Delete unused/untagged images for discovered services
-	@echo "Pruning untagged (dangling) images..."
-	@docker image prune -f >/dev/null
-	@echo "Removing unused discovered service images..."
-	@images="$$(for svc in $(SERVICES); do docker compose -f $$svc/compose.yml config --images 2>/dev/null || true; done | awk 'NF' | sort -u)"; \
-	if [ -z "$$images" ]; then \
-		echo "No service images discovered."; \
+	@echo "Removing unused untagged images for discovered services..."
+	@repos="$$(for svc in $(SERVICES); do docker compose -f $$svc/compose.yml config --images 2>/dev/null || true; done \
+		| awk 'NF { ref=$$0; sub(/@.*/, "", ref); if (match(ref, /:[^\/:]*$$/)) ref=substr(ref, 1, RSTART-1); print ref }' \
+		| sort -u)"; \
+	if [ -z "$$repos" ]; then \
+		echo "No service image repositories discovered."; \
 		exit 0; \
 	fi; \
 	removed=0; \
-	for image in $$images; do \
-		if docker image inspect "$$image" >/dev/null 2>&1 && [ -z "$$(docker ps -aq --filter ancestor=$$image)" ]; then \
-			echo "  removing $$image"; \
-			docker image rm "$$image" >/dev/null || true; \
-			removed=$$((removed + 1)); \
-		fi; \
+	for repo in $$repos; do \
+		ids="$$(docker image ls --format '{{.Repository}}|{{.Tag}}|{{.ID}}' \
+			| awk -F'|' -v repo="$$repo" '$$1 == repo && $$2 == "<none>" { print $$3 }' \
+			| sort -u)"; \
+		for id in $$ids; do \
+			if [ -z "$$(docker ps -aq --filter ancestor=$$id)" ]; then \
+				echo "  removing $$repo ($$id)"; \
+				docker image rm "$$id" >/dev/null || true; \
+				removed=$$((removed + 1)); \
+			fi; \
+		done; \
 	done; \
-	echo "Removed $$removed unused discovered service image(s)."
+	echo "Removed $$removed unused untagged discovered service image(s)."
 
 ports: ## Show default port assignments
 	@echo "Port  | Service             | Env var              | App                                           | GitHub"
