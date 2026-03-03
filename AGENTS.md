@@ -14,11 +14,12 @@ Docker Compose infrastructure monorepo for self-hosted services. No application 
 curse/
 ├── asspp/               # AssppWeb (IPA install/acquisition UI)
 ├── bark/                # Bark push gateway
-├── clay/                # Clay OpenAI-compatible proxy
+├── clay-a/              # Clay OpenAI-compatible proxy (instance A)
+├── clay-b/              # Clay OpenAI-compatible proxy (instance B)
 ├── herald/              # Herald (nginx + backend + frontend + worker)
 ├── mermaid/             # Mermaid Live Editor (ARM pinned)
 ├── portainer/           # Portainer CE
-├── prism/               # Prism (nginx + backend + frontend + postgres)
+├── prism-a/             # Prism A (nginx + backend + frontend + postgres)
 ├── registry/            # Local Docker registry + custom config
 ├── swiperflix/          # Swiperflix (nginx + gateway + frontend)
 ├── whisper/             # Last Whisper (Caddy + backend + frontend)
@@ -46,10 +47,10 @@ Common service layout:
 | Start/stop services | `Makefile` | `start-<svc>`, `stop-<svc>`, `restart-<svc>`, `logs-<svc>` |
 | Runtime port bindings | `make start-<svc>` output or `docker compose ... ps` | `make ports` is defaults table, not live bindings |
 | Port defaults table | `README.md` + `Makefile:ports` | Keep both in sync when adding/changing ports |
-| Reverse proxy routes | `herald/nginx.conf`, `prism/nginx.conf`, `swiperflix/nginx.conf`, `whisper/Caddyfile` | API/UI path behavior lives here |
+| Reverse proxy routes | `herald/nginx.conf`, `prism-a/nginx.conf`, `swiperflix/nginx.conf`, `whisper/Caddyfile` | API/UI path behavior lives here |
 | Registry behavior | `registry/registry-config/config.yml` | Delete + CORS + upload purging |
 | Herald runtime secrets | `herald/backend.env.example` -> `herald/backend.env` | Replace placeholders before deploy |
-| Prism runtime secrets | `prism/backend.env.example` -> `prism/backend.env` | File is named `backend.env.example` (not `env.example`) |
+| Prism A runtime secrets | `prism-a/backend.env.example` -> `prism-a/backend.env` | File is named `backend.env.example` (not `env.example`) |
 | Whisper credential path | `whisper/env.example` + `whisper/secrets/` | Secret file path defaults to `./secrets/google-credentials.json` |
 
 ## CODE MAP
@@ -74,7 +75,7 @@ Common service layout:
 - Multi-container services expose internal ports and publish host ports only at the edge proxy.
 - `make start-<service>` always runs `docker compose pull` before `up -d`.
 - Healthchecks in compose files are runtime probes; there is no repo-level test framework/CI workflow.
-- Explicit `name:` is used only for selected stacks (`herald`, `prism`, `clay`).
+- Explicit `name:` is used only for selected stacks (`herald`, `prism-a`, `prism-b`, `clay-a`, `clay-b`).
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
@@ -84,7 +85,7 @@ Common service layout:
 - Never change default ports without updating both `README.md` and `Makefile:ports`.
 - Never use non-namespaced env vars that can collide across services.
 - Mermaid is pinned to `platform: linux/arm64`; do not remove without validating target architecture.
-- Herald and Prism use `backend.env` runtime files; do not rename templates to `env.example` without aligning compose `env_file`.
+- Herald and Prism A/B use `backend.env` runtime files; do not rename templates to `env.example` without aligning compose `env_file`.
 
 ## UNIQUE STYLES
 
@@ -122,11 +123,12 @@ docker compose -f <service>/compose.yml logs -f
 | 8000 | Portainer edge | `PORTAINER_EDGE_PORT` |
 | 8080 | Bark | `BARK_PORT` |
 | 8081 | Herald (nginx proxy) | `HERALD_PORT` |
-| 8082 | Prism gateway (nginx) | `PRISM_PORT` |
 | 8083 | Mermaid | `MERMAID_PORT` |
 | 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
 | 8085 | Whisper proxy | `WHISPER_PORT` |
 | 8086 | AssppWeb | `ASSPP_PORT` |
-| 8087 | Clay | `CLAY_PORT` |
+| 8087 | Prism A gateway (nginx) | `PRISM_A_PORT` |
+| 8089 | Clay A | `CLAY_A_PORT` |
+| 8090 | Clay B | `CLAY_B_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |

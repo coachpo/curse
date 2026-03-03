@@ -1,4 +1,4 @@
-name: prism
+name: prism-a
 
 services:
   postgres:
@@ -55,7 +55,7 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - "${PRISM_PORT:-8082}:80"
+      - "${PRISM_A_PORT:-8087}:80"
     depends_on:
       backend:
         condition: service_healthy
