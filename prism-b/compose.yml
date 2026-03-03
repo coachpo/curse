@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    command: ["postgres", "-c", "timezone=UTC"]
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
