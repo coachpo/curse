@@ -74,6 +74,7 @@ All ports are overridable via environment variables in each service env file (`.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
 - Prism A: gateway (nginx) listens on host port `PRISM_A_PORT` (default `8087`) and proxies internally to frontend/backend. Runtime settings/secrets live in `prism-a/backend.env`.
 - Prism B: duplicated Prism stack for A/B tests. Gateway listens on `PRISM_B_PORT` (default `8088`) and uses isolated Postgres data plus `prism-b/backend.env`.
+- Prism B includes `prism-b/clone-prism-a-volume.sh` to clone Prism A Postgres volume data into Prism B (stop Prism B first).
 - Clay A / Clay B: cloned Clay stacks with distinct Compose project names and ports (`CLAY_A_PORT` default `8089`, `CLAY_B_PORT` default `8090`) so they can run in parallel with independent `.env` configs.
 - Herald: pulls pre-built GHCR images (`ghcr.io/coachpo/herald-backend:latest`, `ghcr.io/coachpo/herald-frontend:latest`) with `pull_policy: always`. nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults are embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
 - Swiperflix: pre-built GHCR images. Reverse proxy on `SWIPERFLIX_PORT` (default `8084`). All runtime defaults embedded in compose; only OpenList credentials need `.env`.
@@ -85,6 +86,7 @@ All ports are overridable via environment variables in each service env file (`.
 - Check status: `make status` or `docker compose -f <service>/compose.yml ps`
 - Follow logs: `make logs-<service>` or `cd <service> && docker compose logs -f`
 - Restart a service: `make restart-<service>`
+- Clone Prism A data into Prism B: `make clone-prism-b-from-prism-a`
 - Ports in use: override the default port via the corresponding env var (see port map above).
 - ARM note: Mermaid image is pinned to `linux/arm64`; adjust `platform` if running on x86_64.
 

@@ -48,6 +48,7 @@ Common service layout:
 | Runtime port bindings | `make start-<svc>` output or `docker compose ... ps` | `make ports` is defaults table, not live bindings |
 | Port defaults table | `README.md` + `Makefile:ports` | Keep both in sync when adding/changing ports |
 | Reverse proxy routes | `herald/nginx.conf`, `prism-a/nginx.conf`, `swiperflix/nginx.conf`, `whisper/Caddyfile` | API/UI path behavior lives here |
+| Clone Prism A data into Prism B | `prism-b/clone-prism-a-volume.sh` | Copies Prism A postgres volume into Prism B volume (target stack must be stopped) |
 | Registry behavior | `registry/registry-config/config.yml` | Delete + CORS + upload purging |
 | Herald runtime secrets | `herald/backend.env.example` -> `herald/backend.env` | Replace placeholders before deploy |
 | Prism A runtime secrets | `prism-a/backend.env.example` -> `prism-a/backend.env` | File is named `backend.env.example` (not `env.example`) |
@@ -108,6 +109,7 @@ make stop-all
 make status
 make ports
 make prune-images
+make clone-prism-b-from-prism-a
 
 # Direct compose (one service)
 docker compose -f <service>/compose.yml up -d

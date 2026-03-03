@@ -10,7 +10,7 @@ SERVICES := $(sort $(patsubst %/compose.yml,%,$(wildcard */compose.yml)))
 # Compose command for a given service directory
 compose = docker compose -f $(1)/compose.yml
 
-.PHONY: help start-all stop-all status ports services prune-images
+.PHONY: help start-all stop-all status ports services prune-images clone-prism-b-from-prism-a
 
 # Print published host ports for a service after start/restart.
 # Uses runtime data from `docker compose ps --format json` to reflect real bindings.
@@ -80,6 +80,9 @@ help: ## Show this help
 	@echo "Info:"
 	@echo "  make ports               Show default port assignments"
 	@echo "  make services            List discovered services"
+	@echo ""
+	@echo "Utilities:"
+	@echo "  make clone-prism-b-from-prism-a  Clone Prism A postgres volume into Prism B"
 
 # ── Dynamic per-service targets ──────────────────────────────────────
 
@@ -141,6 +144,9 @@ prune-images: ## Delete unused/untagged images for discovered services
 		done; \
 	done; \
 	echo "Removed $$removed unused untagged discovered service image(s)."
+
+clone-prism-b-from-prism-a: ## Clone Prism A postgres volume into Prism B
+	./prism-b/clone-prism-a-volume.sh
 
 ports: ## Show default port assignments
 	@echo "Port  | Service             | Env var              | App                                           | GitHub"
