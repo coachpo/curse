@@ -8,13 +8,13 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: prism_b_v1
+      POSTGRES_DB: prism_v1
     expose:
       - "5432"
     volumes:
-      - prism_b_postgres_data:/var/lib/postgresql/data
+      - prism_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d prism_b_v1"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d prism_v1"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -71,4 +71,4 @@ services:
       start_period: 5s
 
 volumes:
-  prism_b_postgres_data:
+  prism_postgres_data:
