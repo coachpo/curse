@@ -163,5 +163,6 @@ ports: ## Show default port assignments
 	@echo "8088  | Prism B (nginx)     | PRISM_B_PORT         | Prism clone for A/B testing                   | https://github.com/coachpo/prism"
 	@echo "8089  | Clay A              | CLAY_A_PORT          | OpenAI-compatible API proxy clone             | https://github.com/coachpo/clay"
 	@echo "8090  | Clay B              | CLAY_B_PORT          | OpenAI-compatible API proxy clone             | https://github.com/coachpo/clay"
+	@echo "8091  | Clay C              | CLAY_C_PORT          | OpenAI-compatible API proxy clone             | https://github.com/coachpo/clay"
 	@echo "9000  | Portainer UI        | PORTAINER_PORT       | Docker management dashboard                   | -"
 	@echo "9443  | Portainer HTTPS     | PORTAINER_HTTPS_PORT | Docker management dashboard (HTTPS)           | -"
