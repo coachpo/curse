@@ -161,6 +161,7 @@ ports: ## Show default port assignments
 	@echo "8086  | AssppWeb            | ASSPP_PORT           | iOS IPA install/acquisition web UI            | -"
 	@echo "8087  | Prism A (nginx)     | PRISM_A_PORT         | Self-hosted LLM proxy gateway                 | https://github.com/coachpo/prism"
 	@echo "8088  | Prism B (nginx)     | PRISM_B_PORT         | Prism clone for A/B testing                   | https://github.com/coachpo/prism"
+	@echo "8432  | Prism B Postgres    | PRISM_B_POSTGRES_PORT | Direct host access to Prism B PostgreSQL      | https://github.com/coachpo/prism"
 	@echo "8089  | Clay A              | CLAY_A_PORT          | OpenAI-compatible API proxy clone             | https://github.com/coachpo/clay"
 	@echo "8090  | Clay B              | CLAY_B_PORT          | OpenAI-compatible API proxy clone             | https://github.com/coachpo/clay"
 	@echo "8091  | Clay C              | CLAY_C_PORT          | OpenAI-compatible API proxy clone             | https://github.com/coachpo/clay"
