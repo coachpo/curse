@@ -1,0 +1,21 @@
+services:
+  kiro:
+    image: ghcr.io/jwadow/kiro-gateway:latest
+    container_name: kiro
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    ports:
+      - "${KIRO_PORT:-8092}:8000"
+    environment:
+      PROXY_API_KEY: ${PROXY_API_KEY:?set in kiro/.env}
+      KIRO_CREDS_FILE: /home/kiro/.aws/sso/cache/kiro-auth-token.json
+    volumes:
+      - "${KIRO_GATEWAY_CACHE_DIR:-./state/cache}:/home/kiro/.aws/sso/cache"
+      - "${KIRO_GATEWAY_AUTH_TOKEN_FILE:-./state/kiro-auth-token.json}:/home/kiro/.aws/sso/cache/kiro-auth-token.json"
+    networks:
+      - kiro-network
+
+networks:
+  kiro-network:
+    driver: bridge
