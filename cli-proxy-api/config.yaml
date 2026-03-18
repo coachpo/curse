@@ -1,0 +1,21 @@
+host: ""
+port: 8317
+
+remote-management:
+  allow-remote: false
+  secret-key: ""
+  disable-control-panel: false
+
+auth-dir: "~/.cli-proxy-api"
+
+api-keys:
+  - "replace-with-a-long-random-api-key"
+
+debug: false
+logging-to-file: false
+usage-statistics-enabled: false
+proxy-url: ""
+request-retry: 3
+
+routing:
+  strategy: "round-robin"
