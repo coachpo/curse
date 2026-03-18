@@ -47,6 +47,7 @@ docker compose -f <service>/compose.yml up -d
 | Clay B | Clay OpenAI-compatible proxy clone | http://localhost:8090 | `clay-b/env.example` (copy to `clay-b/.env`) |
 | Clay C | Clay OpenAI-compatible proxy clone | http://localhost:8091 | `clay-c/env.example` (copy to `clay-c/.env`) |
 | Kiro | OpenAI-compatible proxy backed by Kiro auth | http://localhost:8092 | `kiro/env.example` (copy to `kiro/.env`), repo-local state under `kiro/state/` |
+| CLIProxyAPI | Multi-provider CLI/API proxy with repo-local auth state | http://localhost:8317 | `cli-proxy-api/env.example` (copy to `cli-proxy-api/.env`, optional), edit `cli-proxy-api/config.yaml`, repo-local state under `cli-proxy-api/state/auth/` |
 | Swiperflix | Swiperflix (nginx proxy + gateway + frontend) | http://localhost:8084 | `swiperflix/env.example` (copy to `swiperflix/.env`), `swiperflix/nginx.conf` |
 | Whisper | Last Whisper (Caddy proxy + backend + frontend) | http://localhost:8085 | `whisper/env.example` (copy to `whisper/.env`), `whisper/Caddyfile` |
 
@@ -71,6 +72,7 @@ All ports are overridable via environment variables in each service env file (`.
 | 8090 | Clay B | `CLAY_B_PORT` |
 | 8091 | Clay C | `CLAY_C_PORT` |
 | 8092 | Kiro | `KIRO_PORT` |
+| 8317 | CLIProxyAPI | `CLI_PROXY_API_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
 
@@ -82,6 +84,7 @@ All ports are overridable via environment variables in each service env file (`.
 - Prism B includes `prism-b/clone-prism-a-volume.sh` to clone Prism A Postgres volume data into Prism B (stop Prism B first).
 - Clay A / Clay B / Clay C: cloned Clay stacks with distinct Compose project names and ports (`CLAY_A_PORT` default `8089`, `CLAY_B_PORT` default `8090`, `CLAY_C_PORT` default `8091`) so they can run in parallel with independent `.env` configs.
 - Kiro: pre-built GHCR image (`ghcr.io/jwadow/kiro-gateway:latest`). API listens on `KIRO_PORT` (default `8092`). Copy `kiro/env.example` to `kiro/.env`, set `PROXY_API_KEY`, and keep your Kiro auth material under `kiro/state/`: `kiro/state/kiro-auth-token.json` for the token file and `kiro/state/cache/` for cache data. The service keeps its internal credential-path setting in a tracked file so users only need to manage host-side paths.
+- CLIProxyAPI: pre-built Docker Hub image (`eceasy/cli-proxy-api:latest`). The primary API listens on `CLI_PROXY_API_PORT` (default `8317`). The tracked `cli-proxy-api/config.yaml` mounts to `/CLIProxyAPI/config.yaml`, and repo-local auth/session state persists under `cli-proxy-api/state/auth/`. Replace the placeholder API key in `cli-proxy-api/config.yaml` before starting. Copy `cli-proxy-api/env.example` to `cli-proxy-api/.env` only if you want to override the default port or timezone.
 - Herald: pulls pre-built GHCR images (`ghcr.io/coachpo/herald-backend:latest`, `ghcr.io/coachpo/herald-frontend:latest`) with `pull_policy: always`. nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults are embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
 - Swiperflix: pre-built GHCR images. Reverse proxy on `SWIPERFLIX_PORT` (default `8084`). All runtime defaults embedded in compose; only OpenList credentials need `.env`.
 - Whisper: pre-built GHCR images. Caddy proxy on `WHISPER_PORT` (default `8085`). All runtime defaults embedded in compose; only `BACKEND_API_KEYS_CSV` and Google credentials JSON (`whisper/secrets/`) needed.
