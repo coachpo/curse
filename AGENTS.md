@@ -14,8 +14,7 @@ Docker Compose infrastructure monorepo for self-hosted services. No application 
 curse/
 ├── asspp/               # AssppWeb (IPA install/acquisition UI)
 ├── bark/                # Bark push gateway
-├── clay-a/              # Clay OpenAI-compatible proxy (instance A)
-├── clay-b/              # Clay OpenAI-compatible proxy (instance B)
+├── clay/                # Clay OpenAI-compatible proxy
 ├── herald/              # Herald (nginx + backend + frontend + worker)
 ├── mermaid/             # Mermaid Live Editor (ARM pinned)
 ├── portainer/           # Portainer CE
@@ -76,7 +75,7 @@ Common service layout:
 - Multi-container services expose internal ports and publish host ports only at the edge proxy.
 - `make start-<service>` always runs `docker compose pull` before `up -d`.
 - Healthchecks in compose files are runtime probes; there is no repo-level test framework/CI workflow.
-- Explicit `name:` is used only for selected stacks (`herald`, `prism-a`, `prism-b`, `clay-a`, `clay-b`).
+- Explicit `name:` is used only for selected stacks (`herald`, `prism-a`, `prism-b`, `clay`).
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
@@ -130,7 +129,6 @@ docker compose -f <service>/compose.yml logs -f
 | 8085 | Whisper proxy | `WHISPER_PORT` |
 | 8086 | AssppWeb | `ASSPP_PORT` |
 | 8087 | Prism A gateway (nginx) | `PRISM_A_PORT` |
-| 8089 | Clay A | `CLAY_A_PORT` |
-| 8090 | Clay B | `CLAY_B_PORT` |
+| 8089 | Clay | `CLAY_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
