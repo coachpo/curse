@@ -1,0 +1,27 @@
+services:
+  # Nacos - service discovery and configuration management
+  nacos:
+    image: nacos/nacos-server:v3.1.1
+    container_name: nacos
+    restart: unless-stopped
+    ports:
+      - "${NACOS_PORT:-8848}:8848"
+      - "${NACOS_GRPC_PORT:-9848}:9848"
+    env_file:
+      - ./.env
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+    volumes:
+      - nacos_data:/home/nacos/data
+    networks:
+      - nacos-network
+
+volumes:
+  nacos_data:
+    name: nacos_data
+    driver: local
+
+networks:
+  nacos-network:
+    driver: bridge

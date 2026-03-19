@@ -48,6 +48,7 @@ docker compose -f <service>/compose.yml up -d
 | CLIProxyAPI | Multi-provider CLI/API proxy with repo-local auth state | http://localhost:8317 | `cli-proxy-api/env.example` (copy to `cli-proxy-api/.env`, optional), edit `cli-proxy-api/config.yaml`, repo-local state under `cli-proxy-api/state/auth/` |
 | Swiperflix | Swiperflix (nginx proxy + gateway + frontend) | http://localhost:8084 | `swiperflix/env.example` (copy to `swiperflix/.env`), `swiperflix/nginx.conf` |
 | Whisper | Last Whisper (Caddy proxy + backend + frontend) | http://localhost:8085 | `whisper/env.example` (copy to `whisper/.env`), `whisper/Caddyfile` |
+| Nacos | Service discovery and configuration management (standalone) | http://localhost:8848 | `nacos/env.example` (copy to `nacos/.env`) |
 
 ## Default port map
 
@@ -69,6 +70,7 @@ All ports are overridable via environment variables in each service env file (`.
 | 8089 | Clay | `CLAY_PORT` |
 | 8092 | Kiro | `KIRO_PORT` |
 | 8317 | CLIProxyAPI | `CLI_PROXY_API_PORT` |
+| 8848 | Nacos | `NACOS_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
 

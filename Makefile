@@ -165,5 +165,6 @@ ports: ## Show default port assignments
 	@echo "8089  | Clay                | CLAY_PORT            | OpenAI-compatible API proxy                   | https://github.com/coachpo/clay"
 	@echo "8092  | Kiro                | KIRO_PORT            | OpenAI-compatible proxy backed by Kiro auth   | https://github.com/jwadow/kiro-gateway"
 	@echo "8317  | CLIProxyAPI         | CLI_PROXY_API_PORT   | Multi-provider CLI/API proxy                  | https://github.com/router-for-me/CLIProxyAPI"
+	@echo "8848  | Nacos               | NACOS_PORT           | Service discovery and configuration management | https://github.com/alibaba/nacos"
 	@echo "9000  | Portainer UI        | PORTAINER_PORT       | Docker management dashboard                   | -"
 	@echo "9443  | Portainer HTTPS     | PORTAINER_HTTPS_PORT | Docker management dashboard (HTTPS)           | -"
