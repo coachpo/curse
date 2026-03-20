@@ -5,13 +5,18 @@ services:
     container_name: nacos
     restart: unless-stopped
     ports:
-      - "${NACOS_PORT:-8848}:8848"
+      - "${NACOS_CONSOLE_PORT:-8090}:8080"
+      - "${NACOS_SERVER_PORT:-8848}:8848"
       - "${NACOS_GRPC_PORT:-9848}:9848"
     env_file:
       - ./.env
     environment:
       - MODE=standalone
       - PREFER_HOST_MODE=hostname
+      - NACOS_CONSOLE_PORT=8080
+      - NACOS_SERVER_PORT=8848
+      - NACOS_CONSOLE_CONTEXTPATH=/
+      - NACOS_SERVER_CONTEXTPATH=/nacos
     volumes:
       - nacos_data:/home/nacos/data
     networks:
