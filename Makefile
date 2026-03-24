@@ -151,9 +151,11 @@ clone-prism-b-from-prism-a: ## Clone Prism A postgres volume into Prism B
 ports: ## Show default port assignments
 	@echo "Port  | Service             | Env var              | App                                           | GitHub"
 	@echo "------|---------------------|----------------------|-----------------------------------------------|----------------------------------------"
+	@echo "8091  | Cockpit WebUI       | COCKPIT_WEB_PORT     | Standalone Cockpit frontend WebUI             | -"
 	@echo "5000  | Docker Registry     | REGISTRY_PORT        | Private container image registry              | -"
 	@echo "8000  | Portainer edge      | PORTAINER_EDGE_PORT  | Portainer edge tunnel endpoint                | -"
 	@echo "8080  | Bark                | BARK_PORT            | iOS push notification gateway                 | -"
+	@echo "8082  | Headless Cockpit    | COCKPIT_PORT         | Headless Cockpit backend for direct access    | -"
 	@echo "8081  | Herald (nginx)      | HERALD_PORT          | Message ingest and rule-based notifications   | https://github.com/coachpo/herald"
 	@echo "8083  | Mermaid             | MERMAID_PORT         | Live Mermaid diagram editor                   | -"
 	@echo "8084  | Swiperflix (nginx)  | SWIPERFLIX_PORT      | TikTok-style video player stack               | https://github.com/coachpo/swiperflix"
