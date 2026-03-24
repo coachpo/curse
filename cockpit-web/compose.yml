@@ -1,0 +1,6 @@
+services:
+  frontend:
+    image: ghcr.io/coachpo/cockpit-frontend:latest
+    ports:
+      - "${COCKPIT_WEB_PORT:-8091}:80"
+    restart: unless-stopped
