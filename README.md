@@ -38,8 +38,6 @@ docker compose -f <service>/compose.yml up -d
 | Portainer | Docker management UI | http://localhost:9000, https://localhost:9443 (edge: 8000) | Volume `portainer_data` |
 | Bark | iOS push gateway | http://localhost:8080 | — |
 | AssppWeb | iOS app acquisition and IPA install web UI | http://localhost:8086 | `asspp/env.example` (copy to `asspp/.env`, optional) |
-| Headless Cockpit | Headless Cockpit backend for direct API access | http://localhost:8082 | `cockpit/env.example` (copy to `cockpit/.env`) |
-| Cockpit WebUI | Standalone Cockpit frontend WebUI | http://localhost:8091 | `cockpit-web/env.example` (copy to `cockpit-web/.env`, optional) |
 | Mermaid Live Editor | Diagram editor | http://localhost:8083 | — |
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
 | Herald | Herald (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8081 | `herald/backend.env` (copy from `herald/backend.env.example`), `herald/nginx.conf` |
@@ -58,11 +56,9 @@ All ports are overridable via environment variables in each service env file (`.
 
 | Port | Service | Env var |
 |------|---------|---------|
-| 8091 | Cockpit WebUI | `COCKPIT_WEB_PORT` |
 | 5000 | Docker Registry | `REGISTRY_PORT` |
 | 8000 | Portainer edge | `PORTAINER_EDGE_PORT` |
 | 8080 | Bark | `BARK_PORT` |
-| 8082 | Headless Cockpit | `COCKPIT_PORT` |
 | 8081 | Herald (nginx proxy) | `HERALD_PORT` |
 | 8083 | Mermaid | `MERMAID_PORT` |
 | 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
@@ -82,8 +78,6 @@ All ports are overridable via environment variables in each service env file (`.
 ## Configuration notes
 - Config folders sit beside their Compose files, so relative paths in YAML stay valid.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
-- Headless Cockpit: backend-only stack exposed on `COCKPIT_PORT` (default `8082`). Copy `cockpit/env.example` to `cockpit/.env`, set `MANAGEMENT_PASSWORD`, and provide the required `NACOS_*` bootstrap values before starting.
-- Cockpit WebUI: frontend-only stack exposed on `COCKPIT_WEB_PORT` (default `8091`). The frontend can be deployed separately while the backend stays published directly for cross-origin access. Copy `cockpit-web/env.example` to `cockpit-web/.env` only if you want to override the default port.
 - Prism A: gateway (nginx) listens on host port `PRISM_A_PORT` (default `8087`) and proxies internally to frontend/backend. Runtime settings/secrets live in `prism-a/backend.env`.
 - Prism B: duplicated Prism stack for A/B tests. Gateway listens on `PRISM_B_PORT` (default `8088`), PostgreSQL is also published on `PRISM_B_POSTGRES_PORT` (default `8432`), and the stack uses isolated Postgres data plus `prism-b/backend.env`.
 - Prism B includes `prism-b/clone-prism-a-volume.sh` to clone Prism A Postgres volume data into Prism B (stop Prism B first).
