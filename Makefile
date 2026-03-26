@@ -10,6 +10,25 @@ SERVICES := $(sort $(patsubst %/compose.yml,%,$(wildcard */compose.yml)))
 # Compose command for a given service directory
 compose = docker compose -f $(1)/compose.yml
 
+# Optional selector args for `make start-<service> ...`
+# Supported forms:
+#   make start-<service>
+#   make start-<service> <tag>
+#   make start-<service> last [n]
+START_SERVICE_TARGET := $(filter $(addprefix start-,$(SERVICES)),$(firstword $(MAKECMDGOALS)))
+START_SERVICE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+START_IMAGE_SELECTOR := $(word 1,$(START_SERVICE_ARGS))
+START_IMAGE_ROLLBACK_DEPTH := $(word 2,$(START_SERVICE_ARGS))
+START_IMAGE_EXTRA_ARGS := $(wordlist 3,$(words $(START_SERVICE_ARGS)),$(START_SERVICE_ARGS))
+
+ifneq ($(START_SERVICE_TARGET),)
+ifneq ($(strip $(START_SERVICE_ARGS)),)
+.PHONY: $(START_SERVICE_ARGS)
+$(START_SERVICE_ARGS):
+	@:
+endif
+endif
+
 .PHONY: help start-all stop-all status ports services prune-images clone-prism-b-from-prism-a
 
 # Print published host ports for a service after start/restart.
@@ -60,13 +79,113 @@ define PRINT_RUNNING_PORTS
 	fi
 endef
 
+define START_SERVICE
+	@selector="$(START_IMAGE_SELECTOR)"; \
+	depth="$(START_IMAGE_ROLLBACK_DEPTH)"; \
+	extra_args="$(START_IMAGE_EXTRA_ARGS)"; \
+	compose_cmd="$(call compose,$(1))"; \
+	tmp_services=""; \
+	tmp_images=""; \
+	tmp_pairs=""; \
+	override_file=""; \
+	cleanup() { rm -f "$$tmp_services" "$$tmp_images" "$$tmp_pairs" "$$override_file"; }; \
+	trap cleanup EXIT INT TERM HUP; \
+	resolve_tag() { \
+		image_repo="$$1"; \
+		selector_value="$$2"; \
+		rollback_depth="$$3"; \
+		case "$$selector_value" in \
+			last) \
+				if [ -z "$$rollback_depth" ]; then rollback_depth=1; fi; \
+				case "$$rollback_depth" in \
+					''|*[!0-9]*|0) echo "[$(1)] invalid rollback depth '$$rollback_depth'; use a positive integer." >&2; return 1 ;; \
+				esac; \
+				selected_tag="$$(docker image ls "$$image_repo" --format '{{.Tag}}' | awk -v wanted="$$rollback_depth" '\
+					$$0 != "<none>" && $$0 != "latest" && !seen[$$0]++ { \
+						count++; \
+						if (count == wanted) { \
+							print; \
+							exit; \
+						} \
+					} \
+				')"; \
+				if [ -z "$$selected_tag" ]; then \
+					echo "[$(1)] no rollback tag found for $$image_repo at depth $$rollback_depth." >&2; \
+					return 1; \
+				fi; \
+				printf '%s\n' "$$selected_tag"; \
+				;; \
+			'') \
+				printf '%s\n' latest; \
+				;; \
+			*) \
+				if [ -n "$$rollback_depth" ]; then \
+					echo "[$(1)] unexpected extra argument '$$rollback_depth'; use 'make start-$(1) last [n]' or 'make start-$(1) <tag>'." >&2; \
+					return 1; \
+				fi; \
+				printf '%s\n' "$$selector_value"; \
+				;; \
+		esac; \
+	}; \
+	if [ -n "$$extra_args" ]; then \
+		echo "[$(1)] too many arguments '$$extra_args'; use 'make start-$(1)', 'make start-$(1) <tag>', or 'make start-$(1) last [n]'." >&2; \
+		exit 1; \
+	fi; \
+	if [ -n "$$selector" ]; then \
+		tmp_services="$$(mktemp "/tmp/curse-$(1)-services.XXXXXX")"; \
+		tmp_images="$$(mktemp "/tmp/curse-$(1)-images.XXXXXX")"; \
+		tmp_pairs="$$(mktemp "/tmp/curse-$(1)-image-pairs.XXXXXX")"; \
+		override_file="$$(mktemp "/tmp/curse-$(1)-image-override.XXXXXX")"; \
+		$(call compose,$(1)) config --services > "$$tmp_services"; \
+		$(call compose,$(1)) config --images > "$$tmp_images"; \
+		awk 'NR==FNR { services[NR] = $$0; next } { print services[FNR] "|" $$0 }' "$$tmp_services" "$$tmp_images" > "$$tmp_pairs"; \
+		printf "services:\n" > "$$override_file"; \
+		rewritten=0; \
+		while IFS='|' read -r service image; do \
+			case "$$image" in \
+				*@*) continue ;; \
+				*:* ) repo="$${image%:*}"; current_tag="$${image##*:}" ;; \
+				* ) repo="$$image"; current_tag="" ;; \
+			esac; \
+			if [ "$$current_tag" != "latest" ]; then \
+				continue; \
+			fi; \
+			target_tag="$$(resolve_tag "$$repo" "$$selector" "$$depth")" || exit $$?; \
+			printf "  %s:\n    image: %s:%s\n" "$$service" "$$repo" "$$target_tag" >> "$$override_file"; \
+			rewritten=$$((rewritten + 1)); \
+		done < "$$tmp_pairs"; \
+		if [ "$$rewritten" -eq 0 ]; then \
+			echo "[$(1)] no latest-tagged images found to override." >&2; \
+			exit 1; \
+		fi; \
+		compose_cmd="docker compose -f $(1)/compose.yml -f $$override_file"; \
+		if [ "$$selector" = "last" ]; then \
+			echo "[$(1)] using locally cached rollback tag(s) from depth $${depth:-1}."; \
+			$$compose_cmd up -d --pull never; \
+		else \
+			echo "[$(1)] pulling tag '$$selector' for latest-tagged images."; \
+			$$compose_cmd pull; \
+			$$compose_cmd up -d; \
+		fi; \
+	else \
+		$$compose_cmd pull; \
+		$$compose_cmd up -d; \
+	fi
+endef
+
 help: ## Show this help
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Discovered services: $(SERVICES)"
 	@echo ""
 	@echo "Per-service:"
-	@echo "  make start-<service>     Pull latest images and start a service"
+	@echo "  make start-<service> [tag]     Start a service (default tag: latest)"
+	@echo "  make start-<service> last [n]  Roll back latest-tagged images using local tags"
+	@echo "    Examples:"
+	@echo "      make start-bark"
+	@echo "      make start-bark 1.2.3"
+	@echo "      make start-bark last"
+	@echo "      make start-bark last 2"
 	@echo "  make stop-<service>      Stop a service"
 	@echo "  make restart-<service>   Restart a service"
 	@echo "  make logs-<service>      Tail logs for a service"
@@ -90,8 +209,7 @@ define SERVICE_TARGETS
 .PHONY: start-$(1) stop-$(1) restart-$(1) logs-$(1)
 
 start-$(1):
-	$$(call compose,$(1)) pull
-	$$(call compose,$(1)) up -d
+	$$(call START_SERVICE,$(1))
 	$$(call PRINT_RUNNING_PORTS,$(1))
 
 stop-$(1):
