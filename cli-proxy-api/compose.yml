@@ -7,7 +7,7 @@ services:
     environment:
       TZ: ${CLI_PROXY_API_TZ:-Europe/Helsinki}
     volumes:
-      - "./config.yaml:/CLIProxyAPI/config.yaml:ro"
+      - "./config.yaml:/CLIProxyAPI/config.yaml"
       - "./state/auth:/root/.cli-proxy-api"
     logging:
       driver: json-file
