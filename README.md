@@ -48,6 +48,7 @@ docker compose -f <service>/compose.yml up -d
 | Swiperflix | Swiperflix (nginx proxy + gateway + frontend) | http://localhost:8084 | `swiperflix/env.example` (copy to `swiperflix/.env`), `swiperflix/nginx.conf` |
 | Whisper | Last Whisper (Caddy proxy + backend + frontend) | http://localhost:8085 | `whisper/env.example` (copy to `whisper/.env`), `whisper/Caddyfile` |
 | Nacos | Service discovery and configuration management (standalone) | Console: http://localhost:8090/, API: http://localhost:8848/nacos | `nacos/env.example` (copy to `nacos/.env`) |
+| n8n | Workflow automation platform | http://localhost:8091 | Volume `n8n_data` |
 
 ## Default port map
 
@@ -68,6 +69,7 @@ All ports are overridable via environment variables in each service env file (`.
 | 8432 | Prism B PostgreSQL | `PRISM_B_POSTGRES_PORT` |
 | 8089 | Clay | `CLAY_PORT` |
 | 8090 | Nacos Console | `NACOS_CONSOLE_PORT` |
+| 8091 | n8n | `N8N_PORT` |
 | 8317 | CLIProxyAPI | `CLI_PROXY_API_PORT` |
 | 8848 | Nacos Server API | `NACOS_SERVER_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |

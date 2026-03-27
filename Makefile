@@ -281,6 +281,7 @@ ports: ## Show default port assignments
 	@echo "8088  | Prism B (nginx)     | PRISM_B_PORT         | Prism clone for A/B testing                   | https://github.com/coachpo/prism"
 	@echo "8432  | Prism B Postgres    | PRISM_B_POSTGRES_PORT | Direct host access to Prism B PostgreSQL      | https://github.com/coachpo/prism"
 	@echo "8089  | Clay                | CLAY_PORT            | OpenAI-compatible API proxy                   | https://github.com/coachpo/clay"
+	@echo "8091  | n8n                 | N8N_PORT             | Workflow automation platform                  | https://github.com/n8n-io/n8n"
 	@echo "8317  | CLIProxyAPI         | CLI_PROXY_API_PORT   | Multi-provider CLI/API proxy                  | https://github.com/router-for-me/CLIProxyAPI"
 	@echo "9000  | Portainer UI        | PORTAINER_PORT       | Docker management dashboard                   | -"
 	@echo "9443  | Portainer HTTPS     | PORTAINER_HTTPS_PORT | Docker management dashboard (HTTPS)           | -"
