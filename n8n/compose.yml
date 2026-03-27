@@ -6,6 +6,7 @@ services:
       - "${N8N_PORT:-8091}:5678"
     environment:
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_SECURE_COOKIE: "false"
       GENERIC_TIMEZONE: ${N8N_TZ:-Europe/Helsinki}
       TZ: ${N8N_TZ:-Europe/Helsinki}
     volumes:
