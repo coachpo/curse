@@ -5,7 +5,7 @@
 
 ## OVERVIEW
 
-Docker Compose infrastructure monorepo for self-hosted services. No application source is maintained here; each top-level service directory provides a deployable stack via a compose file. Primary deployment target is `capy.lan` (ARM/Linux). The canonical deployment interface is the repo-root `deploy.sh` script.
+Docker Compose infrastructure monorepo for self-hosted services. Each service directory owns its own deployable stack, config examples, and service-specific docs. Primary deployment target is `capy.lan` on ARM/Linux. The canonical deployment interface is the repo-root `deploy.sh` script.
 
 ## STRUCTURE
 
@@ -26,6 +26,7 @@ curse/
 ├── whisper/             # Last Whisper (Caddy + backend + frontend)
 ├── deploy.sh            # Canonical deployment manager
 ├── README.md            # Canonical service table + ports + runbook
+├── tests/               # Shell checks for deploy surface and repo conventions
 └── AGENTS.md
 ```
 
@@ -34,6 +35,7 @@ Common service layout:
 ```text
 <service>/
 ├── compose.yml | compose.yaml | docker-compose.yml | docker-compose.yaml
+├── AGENTS.md                      # Optional service-local notes for complex stacks
 ├── env.example                  # Optional template for .env
 ├── backend.env.example          # Optional template for backend.env
 ├── nginx.conf | Caddyfile       # Optional edge proxy config
@@ -44,16 +46,20 @@ Common service layout:
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add a new service | `<path>/<compose-file>` | Any repo subdirectory containing a supported compose filename is discoverable |
-| Start/stop/restart/log services | `deploy.sh` | `start`, `stop`, `restart`, `logs`, `start-all`, `stop-all` |
-| Runtime port bindings | `./deploy.sh start <svc>` output or `docker compose ... ps` | `./deploy.sh ports` is the defaults table, not live bindings |
-| Port defaults table | `README.md` + `deploy.sh ports` | Keep both in sync when adding/changing ports |
+| Add a service | `<path>/<compose-file>` | Discovery is automatic from supported compose filenames |
+| Start/stop/restart/log services | `deploy.sh` | Supports `./deploy.sh start <service>` and `./deploy.sh <service> start` |
+| Runtime port bindings | `docker compose ... ps` after a start | `./deploy.sh ports` is the defaults table only |
+| Port defaults table | `README.md` + `deploy.sh ports` | Keep both in sync when changing ports |
 | Reverse proxy routes | `herald/nginx.conf`, `prism-a/nginx.conf`, `prism-b/nginx.conf`, `swiperflix/nginx.conf`, `whisper/Caddyfile` | API/UI path behavior lives here |
-| Clone Prism A data into Prism B | `prism-b/clone-prism-a-volume.sh` | Copies Prism A postgres volume into Prism B volume (target stack must be stopped) |
+| Clone Prism A data into Prism B | `prism-b/clone-prism-a-volume.sh` | Prism B must be stopped first |
 | Registry behavior | `registry/registry-config/config.yml` | Delete + CORS + upload purging |
+| Service test coverage | `tests/test_deploy.sh` | Encodes deploy-script and docs expectations |
 | Herald runtime secrets | `herald/backend.env.example` -> `herald/backend.env` | Replace placeholders before deploy |
 | Prism A runtime secrets | `prism-a/backend.env.example` -> `prism-a/backend.env` | File is named `backend.env.example` |
 | Prism B runtime secrets | `prism-b/backend.env.example` -> `prism-b/backend.env` | Same convention as Prism A |
+| Clay runtime env | `clay/env.example` -> `clay/.env` | `OPENAI_API_KEY` is required before start |
+| CLIProxyAPI tracked config | `cli-proxy-api/config.yaml`, `cli-proxy-api/state/auth/` | Replace placeholder API key; auth state stays repo-local |
+| Asspp optional tuning | `asspp/env.example` -> `asspp/.env` | Public base URL, cleanup, and access password are optional |
 | Whisper credential path | `whisper/env.example` + `whisper/secrets/` | Secret file path defaults to `./secrets/google-credentials.json` |
 
 ## CODE MAP
@@ -70,6 +76,7 @@ Common service layout:
 ## CONVENTIONS
 
 - Services are discovered from repo subdirectories containing one of: `compose.yml`, `compose.yaml`, `docker-compose.yml`, `docker-compose.yaml`.
+- `.git` and `.sisyphus` are skipped by discovery.
 - Host ports use `${SERVICE_PORT:-default}` interpolation in each service `ports` stanza.
 - App images use per-service version variables derived from the repo-relative service path, uppercased with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`.
 - App images default to `latest` when no version is supplied.
@@ -80,6 +87,8 @@ Common service layout:
 - `deploy.sh start <service>` always runs `docker compose pull` before `up -d`.
 - Healthchecks in compose files are runtime probes; shell smoke tests live under `tests/`.
 - Explicit `name:` is used only for selected stacks (`herald`, `prism-a`, `prism-b`, `clay`).
+- Mermaid is pinned to `platform: linux/arm64`.
+- Complex multi-container stacks can carry a service-local `AGENTS.md` when parent-level rules are not specific enough.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
@@ -87,9 +96,9 @@ Common service layout:
 - Never hardcode service lists in `deploy.sh`; discovery must stay automatic.
 - Never change default ports without updating both `README.md` and `deploy.sh ports`.
 - Never use non-namespaced env vars that can collide across services.
-- Mermaid is pinned to `platform: linux/arm64`; do not remove without validating target architecture.
 - Herald and Prism A/B use `backend.env` runtime files; do not rename templates without aligning compose `env_file`.
 - Never retag mixed-stack dependency images just to make version rollout easier; only app images should follow the per-service version variable pattern.
+- Prism B clone script requires Prism B to be stopped first.
 
 ## UNIQUE STYLES
 
@@ -98,6 +107,7 @@ Common service layout:
 - Security posture differs by service: Herald applies `read_only`, `tmpfs`, and `no-new-privileges`; others are lighter.
 - Proxy flavor varies by service (nginx vs Caddy); route semantics are service-specific.
 - `deploy.sh` provides both interactive UX for manual operation and deterministic CLI commands for automation.
+- `deploy.sh` is exercised by `tests/test_deploy.sh`, so docs should stay in step with that contract.
 
 ## COMMANDS
 
@@ -105,6 +115,7 @@ Common service layout:
 # Preferred lifecycle interface
 ./deploy.sh
 ./deploy.sh services
+./deploy.sh <service> start
 ./deploy.sh start <service> [--version TAG]
 ./deploy.sh stop <service>
 ./deploy.sh restart <service> [--version TAG]
