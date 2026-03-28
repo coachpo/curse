@@ -1,62 +1,60 @@
 # Curse Compose Stack
 
-Self-hosted services packaged as separate Docker Compose bundles. All ports are configurable via environment variables, and `./deploy.sh` is the canonical deployment manager.
+Self-hosted services packaged as separate Docker Compose bundles. `./deploy.sh` is the canonical deployment interface, and ports stay configurable through service env files.
 
-## Prerequisites
-- Docker + Docker Compose v2 on the host.
-- (Herald) Copy `herald/backend.env.example` to `herald/backend.env` and fill in real values (`DJANGO_SECRET_KEY`, `JWT_SIGNING_KEY`, etc.).
+## Quick start
 
-## How to run
-
-### Using `deploy.sh` (recommended)
 ```bash
-./deploy.sh                         # Interactive: choose service, action, and optional version tag
-./deploy.sh services                # List discovered services
-./deploy.sh ports                   # Show default port assignments
-./deploy.sh status                  # Show running containers
-./deploy.sh start bark              # Start a single service with latest app images
-./deploy.sh start bark --version 1.2.3
-./deploy.sh restart prism-a --version 2026.03.28
-./deploy.sh stop bark
-./deploy.sh logs bark
-./deploy.sh start-all --version 2026.03.28
+./deploy.sh
+./deploy.sh services
+./deploy.sh ports
+./deploy.sh status
+./deploy.sh start <service>
+./deploy.sh <service> start
+./deploy.sh start <service> --version 1.2.3
+./deploy.sh restart <service> --version 1.2.3
+./deploy.sh stop <service>
+./deploy.sh logs <service>
+./deploy.sh start-all --version 1.2.3
 ./deploy.sh stop-all
 ./deploy.sh prune-images
 ./deploy.sh clone-prism-b-from-prism-a
 ```
 
-`deploy.sh` auto-discovers repo folders containing `compose.yml`, `compose.yaml`, `docker-compose.yml`, or `docker-compose.yaml`.
+`deploy.sh` auto-discovers repo folders containing `compose.yml`, `compose.yaml`, `docker-compose.yml`, or `docker-compose.yaml`, and skips `.git` and `.sisyphus`. `start` always runs `docker compose pull` before `up -d`.
 
-### Using Compose directly
-Each service keeps its own compose file in its directory:
+The service-first shorthand also works for `stop`, `restart`, and `logs`.
+
+App images use path-derived version vars such as `HERALD_VERSION`, `PRISM_A_VERSION`, `PRISM_B_VERSION`, and `CLI_PROXY_API_VERSION`. Nested service paths are uppercased with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`. Each app image defaults to `latest`; pinned dependencies stay pinned.
+
+## Using Compose directly
+
 ```bash
 docker compose -f <service>/compose.yml up -d
 docker compose -f <service>/compose.yml down
 docker compose -f <service>/compose.yml logs -f
 ```
 
-App images are versioned through per-service env vars such as `HERALD_VERSION`, `PRISM_A_VERSION`, and `CLI_PROXY_API_VERSION`. For nested service folders, the variable name is derived from the repo-relative path with non-alphanumeric characters converted to underscores. Every app image defaults to `latest` when no version is supplied; pinned dependency images inside mixed stacks stay pinned.
-
 ## Services at a glance
 | Service | Purpose | Default URL/Port | Config |
 | --- | --- | --- | --- |
 | Portainer | Docker management UI | http://localhost:9000, https://localhost:9443 (edge: 8000) | Volume `portainer_data` |
 | Bark | iOS push gateway | http://localhost:8080 | — |
-| AssppWeb | iOS app acquisition and IPA install web UI | http://localhost:8086 | `asspp/env.example` (copy to `asspp/.env`, optional) |
+| AssppWeb | iOS app acquisition and IPA install web UI | http://localhost:8086 | `asspp/env.example` |
 | Mermaid Live Editor | Diagram editor | http://localhost:8083 | — |
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
-| Herald | Herald (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8081 | `herald/backend.env` (copy from `herald/backend.env.example`), `herald/nginx.conf` |
-| Prism A | Prism app (nginx gateway + backend + frontend) | http://localhost:8087 | `prism-a/backend.env` (copy from `prism-a/backend.env.example`), `prism-a/nginx.conf` |
-| Prism B | Prism app clone for A/B testing (nginx gateway + backend + frontend) | http://localhost:8088, PostgreSQL: localhost:8432 | `prism-b/backend.env` (copy from `prism-b/backend.env.example`), `prism-b/nginx.conf` |
-| Clay | Clay OpenAI-compatible proxy | http://localhost:8089 | `clay/env.example` (copy to `clay/.env`) |
-| CLIProxyAPI | Multi-provider CLI/API proxy with repo-local auth state | http://localhost:8317 | `cli-proxy-api/env.example` (copy to `cli-proxy-api/.env`, optional), edit `cli-proxy-api/config.yaml`, repo-local state under `cli-proxy-api/state/auth/` |
-| Swiperflix | Swiperflix (nginx proxy + gateway + frontend) | http://localhost:8084 | `swiperflix/env.example` (copy to `swiperflix/.env`), `swiperflix/nginx.conf` |
-| Whisper | Last Whisper (Caddy proxy + backend + frontend) | http://localhost:8085 | `whisper/env.example` (copy to `whisper/.env`), `whisper/Caddyfile` |
+| Herald | Herald stack | http://localhost:8081 | `herald/backend.env`, `herald/nginx.conf` |
+| Prism A | Prism stack | http://localhost:8087 | `prism-a/backend.env`, `prism-a/nginx.conf` |
+| Prism B | Prism clone for A/B testing | http://localhost:8088, PostgreSQL: localhost:8432 | `prism-b/backend.env`, `prism-b/nginx.conf` |
+| Clay | Clay OpenAI-compatible proxy | http://localhost:8089 | `clay/env.example` |
+| CLIProxyAPI | Multi-provider CLI/API proxy | http://localhost:8317 | `cli-proxy-api/env.example`, `cli-proxy-api/config.yaml` |
+| Swiperflix | Swiperflix stack | http://localhost:8084 | `swiperflix/env.example`, `swiperflix/nginx.conf` |
+| Whisper | Last Whisper stack | http://localhost:8085 | `whisper/env.example`, `whisper/Caddyfile` |
 | n8n | Workflow automation platform | http://localhost:8091 | Volume `n8n_data` |
 
 ## Default port map
 
-All ports are overridable via environment variables in each service env file (`.env`/`backend.env`) or shell environment.
+All ports are overridable via service env files or shell environment.
 
 | Port | Service | Env var |
 |------|---------|---------|
@@ -78,18 +76,24 @@ All ports are overridable via environment variables in each service env file (`.
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
 
 ## Configuration notes
-- Config folders sit beside their compose files, so relative paths in YAML stay valid.
-- Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
-- Prism A: gateway (nginx) listens on host port `PRISM_A_PORT` (default `8087`) and proxies internally to frontend/backend. Runtime settings/secrets live in `prism-a/backend.env`.
-- Prism B: duplicated Prism stack for A/B tests. Gateway listens on `PRISM_B_PORT` (default `8088`), PostgreSQL is also published on `PRISM_B_POSTGRES_PORT` (default `8432`), and the stack uses isolated Postgres data plus `prism-b/backend.env`.
-- Prism B includes `prism-b/clone-prism-a-volume.sh` to clone Prism A Postgres volume data into Prism B (stop Prism B first).
-- Clay: single Clay stack exposed on `CLAY_PORT` (default `8089`) with repo-local config in `clay/.env`.
-- CLIProxyAPI: pre-built Docker Hub image. The primary API listens on `CLI_PROXY_API_PORT` (default `8317`). The tracked `cli-proxy-api/config.yaml` mounts to `/CLIProxyAPI/config.yaml`, and repo-local auth/session state persists under `cli-proxy-api/state/auth/`. Replace the placeholder API key in `cli-proxy-api/config.yaml` before starting.
-- Herald: uses pre-built GHCR images. `deploy.sh` pulls before `up -d`, nginx reverse-proxies to internal backend (:8100) and frontend (:3100), and runtime secrets, `APP_BASE_URL`, and optional SMTP config live in `herald/backend.env`.
-- Swiperflix: pre-built GHCR app images behind a pinned nginx reverse proxy on `SWIPERFLIX_PORT` (default `8084`).
-- Whisper: pre-built GHCR app images behind a pinned Caddy proxy on `WHISPER_PORT` (default `8085`). Only `BACKEND_API_KEYS_CSV` and Google credentials JSON (`whisper/secrets/`) are required.
-- AssppWeb: pre-built GHCR image. UI listens on `ASSPP_PORT` (default `8086`); optional behavior/security tuning is exposed in `asspp/env.example`.
-- Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.
+- `tests/test_deploy.sh` checks the deploy surface, version-variable convention, and discovery rules.
+- `deploy.sh ports` prints the defaults table, not live bindings.
+- Portainer is the only service with `restart: always`; the others use `restart: unless-stopped`.
+- Prism B intentionally publishes PostgreSQL on `PRISM_B_POSTGRES_PORT` and keeps its own data volume.
+- Prism B ships `prism-b/clone-prism-a-volume.sh` for copying Prism A Postgres data into Prism B, and Prism B must be stopped first.
+- Mermaid is pinned to `platform: linux/arm64`.
+- Registry delete is enabled in `registry/registry-config/config.yml`.
+- `cli-proxy-api/config.yaml` includes a placeholder API key that must be replaced before use.
+
+## Setup gotchas by service
+
+- Herald, copy `herald/backend.env.example` to `herald/backend.env` and fill the secret keys plus `APP_BASE_URL`. SMTP is optional.
+- Prism A, copy `prism-a/backend.env.example` to `prism-a/backend.env`. It needs a matching `DATABASE_URL`, auth secrets, and CORS values.
+- Prism B, copy `prism-b/backend.env.example` to `prism-b/backend.env`. It uses the same runtime knobs as Prism A, plus the exposed Postgres port.
+- Whisper, copy `whisper/env.example` to `whisper/.env`, set `BACKEND_API_KEYS_CSV`, and provide `whisper/secrets/google-credentials.json`.
+- Clay, copy `clay/env.example` to `clay/.env` and set `OPENAI_API_KEY`.
+- CLIProxyAPI, copy `cli-proxy-api/env.example` if needed, then edit `cli-proxy-api/config.yaml` and replace the placeholder API key.
+- AssppWeb, copy `asspp/env.example` to `asspp/.env` only if you need the optional settings there.
 
 ## Troubleshooting
 - Check status: `./deploy.sh status` or `docker compose -f <service>/compose.yml ps`
@@ -97,12 +101,10 @@ All ports are overridable via environment variables in each service env file (`.
 - Restart a service: `./deploy.sh restart <service> [--version TAG]`
 - Clone Prism A data into Prism B: `./deploy.sh clone-prism-b-from-prism-a`
 - Remove unused untagged images for discovered repositories: `./deploy.sh prune-images`
-- Ports in use: override the default port via the corresponding env var (see port map above).
-- ARM note: Mermaid is pinned to `linux/arm64`; adjust `platform` if running on x86_64.
 
 ## Adding a new service
-1. Create a folder anywhere in the repo with `compose.yml` (or another supported compose filename).
-2. Optionally add `<name>/<name>-config/` for config files and `<name>/env.example` for secrets.
-3. All ports should be configurable via `${ENV_VAR:-default}` in the compose file.
-4. App images should use the path-derived version convention `${SERVICE_PATH_VERSION:-latest}` with non-alphanumeric characters converted to underscores.
-5. Update this README's service table and port map.
+1. Create a folder anywhere in the repo with `compose.yml` or another supported compose filename.
+2. Keep service-local config beside the compose file.
+3. Make host ports configurable with `${ENV_VAR:-default}` in the compose file.
+4. Use the path-derived `${SERVICE_PATH_VERSION:-latest}` convention for app images.
+5. Update the root README port map and service table when defaults change.
