@@ -5,6 +5,7 @@ ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 COMPOSE_CANDIDATES=(compose.yml compose.yaml docker-compose.yml docker-compose.yaml)
 SERVICE_NAMES=()
 SERVICE_FILES=()
+NORMALIZED_ARGS=()
 
 die() {
   printf 'error: %s\n' "$1" >&2
@@ -288,6 +289,12 @@ Usage: ./deploy.sh [command]
 Interactive default:
   ./deploy.sh
 
+Alternative single-service shorthand:
+  ./deploy.sh <service> start [--version TAG]
+  ./deploy.sh <service> stop
+  ./deploy.sh <service> restart [--version TAG]
+  ./deploy.sh <service> logs
+
 Commands:
   ./deploy.sh services
   ./deploy.sh ports
@@ -318,6 +325,27 @@ parse_optional_version() {
   fi
 
   die "$usage_text"
+}
+
+is_service_action() {
+  case "$1" in
+    start|stop|restart|logs) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+normalize_service_first_args() {
+  local service="$1"
+  local action="$2"
+
+  discover_services
+  if compose_file_for_service "$service" >/dev/null 2>&1 && is_service_action "$action"; then
+    shift 2
+    NORMALIZED_ARGS=("$action" "$service" "$@")
+    return 0
+  fi
+
+  return 1
 }
 
 choose_service_interactive() {
@@ -405,6 +433,13 @@ main() {
   if [ "$#" -eq 0 ]; then
     interactive_mode
     return 0
+  fi
+
+  if [ "$#" -ge 2 ]; then
+    if normalize_service_first_args "$1" "$2" "${@:3}"; then
+      set -- "${NORMALIZED_ARGS[@]}"
+      command="${1:-}"
+    fi
   fi
 
   case "$command" in

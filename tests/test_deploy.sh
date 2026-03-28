@@ -296,9 +296,21 @@ check_cli_behavior() {
   assert_log_contains 'compose|alpha-service/compose.yml|up -d|ALPHA_SERVICE_VERSION=1.2.3'
 
   : > "$FIXTURE_LOG"
+  output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh alpha-service start --version 7.8.9)"
+  assert_contains "$output" 'alpha-service'
+  assert_log_contains 'compose|alpha-service/compose.yml|pull|ALPHA_SERVICE_VERSION=7.8.9'
+  assert_log_contains 'compose|alpha-service/compose.yml|up -d|ALPHA_SERVICE_VERSION=7.8.9'
+
+  : > "$FIXTURE_LOG"
   output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh start alpha-service)"
   assert_log_contains 'compose|alpha-service/compose.yml|pull|ALPHA_SERVICE_VERSION=latest'
   assert_log_contains 'compose|alpha-service/compose.yml|up -d|ALPHA_SERVICE_VERSION=latest'
+
+  : > "$FIXTURE_LOG"
+  output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh apps/gamma-app restart)"
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|down|APPS_GAMMA_APP_VERSION='
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|pull|APPS_GAMMA_APP_VERSION=latest'
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|up -d|APPS_GAMMA_APP_VERSION=latest'
 
   : > "$FIXTURE_LOG"
    output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh restart apps/gamma-app --version 4.5.6)"
