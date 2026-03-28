@@ -147,7 +147,7 @@ define START_SERVICE
 				*:* ) repo="$${image%:*}"; current_tag="$${image##*:}" ;; \
 				* ) repo="$$image"; current_tag="" ;; \
 			esac; \
-			if [ "$$current_tag" != "latest" ]; then \
+			if [ -n "$$current_tag" ] && [ "$$current_tag" != "latest" ]; then \
 				continue; \
 			fi; \
 			target_tag="$$(resolve_tag "$$repo" "$$selector" "$$depth")" || exit $$?; \
@@ -155,7 +155,7 @@ define START_SERVICE
 			rewritten=$$((rewritten + 1)); \
 		done < "$$tmp_pairs"; \
 		if [ "$$rewritten" -eq 0 ]; then \
-			echo "[$(1)] no latest-tagged images found to override." >&2; \
+			echo "[$(1)] no latest or implicit-latest images found to override." >&2; \
 			exit 1; \
 		fi; \
 		compose_cmd="docker compose -f $(1)/compose.yml -f $$override_file"; \
@@ -163,9 +163,9 @@ define START_SERVICE
 			echo "[$(1)] using locally cached rollback tag(s) from depth $${depth:-1}."; \
 			$$compose_cmd up -d --pull never; \
 		else \
-			echo "[$(1)] pulling tag '$$selector' for latest-tagged images."; \
+			echo "[$(1)] pulling tag '$$selector' for latest or implicit-latest images."; \
 			$$compose_cmd pull; \
-			$$compose_cmd up -d; \
+			$$compose_cmd up -d --pull never; \
 		fi; \
 	else \
 		$$compose_cmd pull; \
