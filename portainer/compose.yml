@@ -1,7 +1,7 @@
 services:
   # Portainer - Docker management UI
   portainer:
-    image: portainer/portainer-ce:lts
+    image: portainer/portainer-ce:${PORTAINER_VERSION:-latest}
     container_name: portainer
     restart: always
     ports:

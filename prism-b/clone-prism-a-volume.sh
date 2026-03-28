@@ -40,7 +40,7 @@ resolve_volume() {
 }
 
 if docker ps -q --filter "label=com.docker.compose.project=${TARGET_PROJECT}" | grep -q .; then
-  echo "error: ${TARGET_PROJECT} containers are running. Stop them first (make stop-${TARGET_PROJECT})." >&2
+  echo "error: ${TARGET_PROJECT} containers are running. Stop them first (./deploy.sh stop ${TARGET_PROJECT})." >&2
   exit 1
 fi
 

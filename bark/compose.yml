@@ -1,7 +1,7 @@
 services:
   # Bark Server - iOS push notification service
   bark:
-    image: finab/bark-server:latest
+    image: finab/bark-server:${BARK_VERSION:-latest}
     container_name: bark
     restart: unless-stopped
     ports:

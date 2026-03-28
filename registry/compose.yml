@@ -1,6 +1,6 @@
 services:
   registry:
-    image: registry:2
+    image: registry:${REGISTRY_VERSION:-latest}
     container_name: local-registry
     ports:
       - "${REGISTRY_PORT:-5000}:5000"

@@ -2,7 +2,7 @@ name: clay
 
 services:
   clay:
-    image: ghcr.io/coachpo/clay:latest
+    image: ghcr.io/coachpo/clay:${CLAY_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "${CLAY_PORT:-8089}:8000"

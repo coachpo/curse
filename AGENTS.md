@@ -1,37 +1,39 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-03-02
-**Commit:** f3d3a97
+**Generated:** 2026-03-28
 **Branch:** main
 
 ## OVERVIEW
 
-Docker Compose infrastructure monorepo for self-hosted services. No application source is maintained here; each top-level service directory provides a deployable stack via `compose.yml`. Primary deployment target is `capy.lan` (ARM/Linux).
+Docker Compose infrastructure monorepo for self-hosted services. No application source is maintained here; each top-level service directory provides a deployable stack via a compose file. Primary deployment target is `capy.lan` (ARM/Linux). The canonical deployment interface is the repo-root `deploy.sh` script.
 
 ## STRUCTURE
 
-```
+```text
 curse/
 ├── asspp/               # AssppWeb (IPA install/acquisition UI)
 ├── bark/                # Bark push gateway
 ├── clay/                # Clay OpenAI-compatible proxy
+├── cli-proxy-api/       # CLIProxyAPI
 ├── herald/              # Herald (nginx + backend + frontend + worker)
 ├── mermaid/             # Mermaid Live Editor (ARM pinned)
+├── n8n/                 # n8n workflow automation
 ├── portainer/           # Portainer CE
 ├── prism-a/             # Prism A (nginx + backend + frontend + postgres)
+├── prism-b/             # Prism B clone stack for A/B testing
 ├── registry/            # Local Docker registry + custom config
 ├── swiperflix/          # Swiperflix (nginx + gateway + frontend)
 ├── whisper/             # Last Whisper (Caddy + backend + frontend)
-├── Makefile             # Auto-discovers services and generates make targets
+├── deploy.sh            # Canonical deployment manager
 ├── README.md            # Canonical service table + ports + runbook
 └── AGENTS.md
 ```
 
 Common service layout:
 
-```
+```text
 <service>/
-├── compose.yml                  # Required (discovery boundary)
+├── compose.yml | compose.yaml | docker-compose.yml | docker-compose.yaml
 ├── env.example                  # Optional template for .env
 ├── backend.env.example          # Optional template for backend.env
 ├── nginx.conf | Caddyfile       # Optional edge proxy config
@@ -42,73 +44,77 @@ Common service layout:
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add a new service | `<name>/compose.yml` | Must be top-level; Makefile scans only `*/compose.yml` |
-| Start/stop services | `Makefile` | `start-<svc>`, `stop-<svc>`, `restart-<svc>`, `logs-<svc>` |
-| Runtime port bindings | `make start-<svc>` output or `docker compose ... ps` | `make ports` is defaults table, not live bindings |
-| Port defaults table | `README.md` + `Makefile:ports` | Keep both in sync when adding/changing ports |
-| Reverse proxy routes | `herald/nginx.conf`, `prism-a/nginx.conf`, `swiperflix/nginx.conf`, `whisper/Caddyfile` | API/UI path behavior lives here |
+| Add a new service | `<path>/<compose-file>` | Any repo subdirectory containing a supported compose filename is discoverable |
+| Start/stop/restart/log services | `deploy.sh` | `start`, `stop`, `restart`, `logs`, `start-all`, `stop-all` |
+| Runtime port bindings | `./deploy.sh start <svc>` output or `docker compose ... ps` | `./deploy.sh ports` is the defaults table, not live bindings |
+| Port defaults table | `README.md` + `deploy.sh ports` | Keep both in sync when adding/changing ports |
+| Reverse proxy routes | `herald/nginx.conf`, `prism-a/nginx.conf`, `prism-b/nginx.conf`, `swiperflix/nginx.conf`, `whisper/Caddyfile` | API/UI path behavior lives here |
 | Clone Prism A data into Prism B | `prism-b/clone-prism-a-volume.sh` | Copies Prism A postgres volume into Prism B volume (target stack must be stopped) |
 | Registry behavior | `registry/registry-config/config.yml` | Delete + CORS + upload purging |
 | Herald runtime secrets | `herald/backend.env.example` -> `herald/backend.env` | Replace placeholders before deploy |
-| Prism A runtime secrets | `prism-a/backend.env.example` -> `prism-a/backend.env` | File is named `backend.env.example` (not `env.example`) |
+| Prism A runtime secrets | `prism-a/backend.env.example` -> `prism-a/backend.env` | File is named `backend.env.example` |
+| Prism B runtime secrets | `prism-b/backend.env.example` -> `prism-b/backend.env` | Same convention as Prism A |
 | Whisper credential path | `whisper/env.example` + `whisper/secrets/` | Secret file path defaults to `./secrets/google-credentials.json` |
 
 ## CODE MAP
 
-| Symbol | Type | Location | Role |
-|--------|------|----------|------|
-| `SERVICES` | Make variable | `Makefile:8` | Service discovery from `*/compose.yml` |
-| `compose` | Make macro | `Makefile:11` | Canonical compose invocation per service |
-| `PRINT_RUNNING_PORTS` | Make macro | `Makefile:17` | Prints runtime published ports after start/restart |
-| `SERVICE_TARGETS` | Make macro | `Makefile:54` | Generates per-service lifecycle/log targets |
-| `start-all` / `stop-all` | Make targets | `Makefile:75`, `Makefile:77` | Bulk lifecycle over discovered services |
-| `status` | Make target | `Makefile:79` | Shows per-service container state |
-| `ports` | Make target | `Makefile:108` | Static defaults and env-var mapping table |
+| Symbol / Surface | Type | Location | Role |
+|------------------|------|----------|------|
+| `discover_services` | Bash function | `deploy.sh` | Finds repo service folders by supported compose filenames |
+| `run_compose_with_version` | Bash function | `deploy.sh` | Sets per-service version env vars before compose commands |
+| `print_running_ports` | Bash function | `deploy.sh` | Prints published host ports after start/restart |
+| `prune_images` | Bash function | `deploy.sh` | Removes unused untagged images for repos referenced by discovered services |
+| `clone_prism_b_from_prism_a` | Bash function | `deploy.sh` | Dispatches to `./prism-b/clone-prism-a-volume.sh` |
+| `${SERVICE_NAME_VERSION:-latest}` | Compose convention | service compose files | App image tag override per service directory |
 
 ## CONVENTIONS
 
-- Compose files are named `compose.yml` and live in top-level service directories.
+- Services are discovered from repo subdirectories containing one of: `compose.yml`, `compose.yaml`, `docker-compose.yml`, `docker-compose.yaml`.
 - Host ports use `${SERVICE_PORT:-default}` interpolation in each service `ports` stanza.
-- Environment variables are namespaced per service (`HERALD_*`, `PRISM_*`, `ASSPP_*`, etc.).
+- App images use per-service version variables derived from the repo-relative service path, uppercased with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`.
+- App images default to `latest` when no version is supplied.
+- Mixed stacks version only their app images; pinned dependencies like `nginx`, `postgres`, and `caddy` stay pinned.
 - `.env` and `backend.env` are gitignored; commit only template files (`env.example`, `backend.env.example`).
 - Restart policy is `unless-stopped` except Portainer (`always`).
-- Multi-container services expose internal ports and publish host ports only at the edge proxy.
-- `make start-<service>` always runs `docker compose pull` before `up -d`.
-- Healthchecks in compose files are runtime probes; there is no repo-level test framework/CI workflow.
+- Multi-container services expose internal ports and publish host ports only at the edge proxy, except Prism B Postgres which is intentionally published.
+- `deploy.sh start <service>` always runs `docker compose pull` before `up -d`.
+- Healthchecks in compose files are runtime probes; shell smoke tests live under `tests/`.
 - Explicit `name:` is used only for selected stacks (`herald`, `prism-a`, `prism-b`, `clay`).
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
 - Never commit `.env`, `backend.env`, or real credential material.
-- Never add services manually to `Makefile`; discovery is automatic from `*/compose.yml`.
-- Never place new services under nested paths if you expect make auto-discovery.
-- Never change default ports without updating both `README.md` and `Makefile:ports`.
+- Never hardcode service lists in `deploy.sh`; discovery must stay automatic.
+- Never change default ports without updating both `README.md` and `deploy.sh ports`.
 - Never use non-namespaced env vars that can collide across services.
 - Mermaid is pinned to `platform: linux/arm64`; do not remove without validating target architecture.
-- Herald and Prism A/B use `backend.env` runtime files; do not rename templates to `env.example` without aligning compose `env_file`.
+- Herald and Prism A/B use `backend.env` runtime files; do not rename templates without aligning compose `env_file`.
+- Never retag mixed-stack dependency images just to make version rollout easier; only app images should follow the per-service version variable pattern.
 
 ## UNIQUE STYLES
 
 - Infra-only repo: orchestrates pre-built images; does not build application code locally.
-- Service ownership boundary is the directory containing `compose.yml`; keep config artifacts co-located.
+- Service ownership boundary is the directory containing the compose file; keep config artifacts co-located.
 - Security posture differs by service: Herald applies `read_only`, `tmpfs`, and `no-new-privileges`; others are lighter.
 - Proxy flavor varies by service (nginx vs Caddy); route semantics are service-specific.
+- `deploy.sh` provides both interactive UX for manual operation and deterministic CLI commands for automation.
 
 ## COMMANDS
 
 ```bash
 # Preferred lifecycle interface
-make services
-make start-<service>
-make stop-<service>
-make restart-<service>
-make logs-<service>
-make start-all
-make stop-all
-make status
-make ports
-make prune-images
-make clone-prism-b-from-prism-a
+./deploy.sh
+./deploy.sh services
+./deploy.sh start <service> [--version TAG]
+./deploy.sh stop <service>
+./deploy.sh restart <service> [--version TAG]
+./deploy.sh logs <service>
+./deploy.sh start-all [--version TAG]
+./deploy.sh stop-all
+./deploy.sh status
+./deploy.sh ports
+./deploy.sh prune-images
+./deploy.sh clone-prism-b-from-prism-a
 
 # Direct compose (one service)
 docker compose -f <service>/compose.yml up -d
@@ -129,6 +135,10 @@ docker compose -f <service>/compose.yml logs -f
 | 8085 | Whisper proxy | `WHISPER_PORT` |
 | 8086 | AssppWeb | `ASSPP_PORT` |
 | 8087 | Prism A gateway (nginx) | `PRISM_A_PORT` |
+| 8088 | Prism B gateway (nginx) | `PRISM_B_PORT` |
+| 8432 | Prism B PostgreSQL | `PRISM_B_POSTGRES_PORT` |
 | 8089 | Clay | `CLAY_PORT` |
+| 8091 | n8n | `N8N_PORT` |
+| 8317 | CLIProxyAPI | `CLI_PROXY_API_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |

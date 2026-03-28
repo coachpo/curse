@@ -1,6 +1,6 @@
 # Curse Compose Stack
 
-Self-hosted services packaged as separate Docker Compose bundles. All ports are configurable via environment variables. Services are auto-discovered by the Makefile.
+Self-hosted services packaged as separate Docker Compose bundles. All ports are configurable via environment variables, and `./deploy.sh` is the canonical deployment manager.
 
 ## Prerequisites
 - Docker + Docker Compose v2 on the host.
@@ -8,29 +8,34 @@ Self-hosted services packaged as separate Docker Compose bundles. All ports are 
 
 ## How to run
 
-### Using Make (recommended)
+### Using `deploy.sh` (recommended)
 ```bash
-make start-<service>     # Start a single service
-make stop-<service>      # Stop a single service
-make restart-<service>   # Restart a single service
-make logs-<service>      # Tail logs
-make start-all           # Start everything
-make stop-all            # Stop everything
-make status              # Show running containers
-make ports               # Show port assignments
-make services            # List discovered services
+./deploy.sh                         # Interactive: choose service, action, and optional version tag
+./deploy.sh services                # List discovered services
+./deploy.sh ports                   # Show default port assignments
+./deploy.sh status                  # Show running containers
+./deploy.sh start bark              # Start a single service with latest app images
+./deploy.sh start bark --version 1.2.3
+./deploy.sh restart prism-a --version 2026.03.28
+./deploy.sh stop bark
+./deploy.sh logs bark
+./deploy.sh start-all --version 2026.03.28
+./deploy.sh stop-all
+./deploy.sh prune-images
+./deploy.sh clone-prism-b-from-prism-a
 ```
+
+`deploy.sh` auto-discovers repo folders containing `compose.yml`, `compose.yaml`, `docker-compose.yml`, or `docker-compose.yaml`.
 
 ### Using Compose directly
-Each service has a `compose.yml` in its directory:
+Each service keeps its own compose file in its directory:
 ```bash
-cd <service> && docker compose up -d
-cd <service> && docker compose down
-cd <service> && docker compose logs -f
-
-# Or from repo root:
 docker compose -f <service>/compose.yml up -d
+docker compose -f <service>/compose.yml down
+docker compose -f <service>/compose.yml logs -f
 ```
+
+App images are versioned through per-service env vars such as `HERALD_VERSION`, `PRISM_A_VERSION`, and `CLI_PROXY_API_VERSION`. For nested service folders, the variable name is derived from the repo-relative path with non-alphanumeric characters converted to underscores. Every app image defaults to `latest` when no version is supplied; pinned dependency images inside mixed stacks stay pinned.
 
 ## Services at a glance
 | Service | Purpose | Default URL/Port | Config |
@@ -42,12 +47,11 @@ docker compose -f <service>/compose.yml up -d
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
 | Herald | Herald (nginx → Django backend + worker + React frontend, SQLite) | http://localhost:8081 | `herald/backend.env` (copy from `herald/backend.env.example`), `herald/nginx.conf` |
 | Prism A | Prism app (nginx gateway + backend + frontend) | http://localhost:8087 | `prism-a/backend.env` (copy from `prism-a/backend.env.example`), `prism-a/nginx.conf` |
-| Prism B | Prism app clone for A/B testing (nginx gateway + backend + frontend) | http://localhost:8088 | `prism-b/backend.env` (copy from `prism-b/backend.env.example`), `prism-b/nginx.conf` |
+| Prism B | Prism app clone for A/B testing (nginx gateway + backend + frontend) | http://localhost:8088, PostgreSQL: localhost:8432 | `prism-b/backend.env` (copy from `prism-b/backend.env.example`), `prism-b/nginx.conf` |
 | Clay | Clay OpenAI-compatible proxy | http://localhost:8089 | `clay/env.example` (copy to `clay/.env`) |
 | CLIProxyAPI | Multi-provider CLI/API proxy with repo-local auth state | http://localhost:8317 | `cli-proxy-api/env.example` (copy to `cli-proxy-api/.env`, optional), edit `cli-proxy-api/config.yaml`, repo-local state under `cli-proxy-api/state/auth/` |
 | Swiperflix | Swiperflix (nginx proxy + gateway + frontend) | http://localhost:8084 | `swiperflix/env.example` (copy to `swiperflix/.env`), `swiperflix/nginx.conf` |
 | Whisper | Last Whisper (Caddy proxy + backend + frontend) | http://localhost:8085 | `whisper/env.example` (copy to `whisper/.env`), `whisper/Caddyfile` |
-| Nacos | Service discovery and configuration management (standalone) | Console: http://localhost:8090/, API: http://localhost:8848/nacos | `nacos/env.example` (copy to `nacos/.env`) |
 | n8n | Workflow automation platform | http://localhost:8091 | Volume `n8n_data` |
 
 ## Default port map
@@ -68,38 +72,37 @@ All ports are overridable via environment variables in each service env file (`.
 | 8088 | Prism B gateway (nginx) | `PRISM_B_PORT` |
 | 8432 | Prism B PostgreSQL | `PRISM_B_POSTGRES_PORT` |
 | 8089 | Clay | `CLAY_PORT` |
-| 8090 | Nacos Console | `NACOS_CONSOLE_PORT` |
 | 8091 | n8n | `N8N_PORT` |
 | 8317 | CLIProxyAPI | `CLI_PROXY_API_PORT` |
-| 8848 | Nacos Server API | `NACOS_SERVER_PORT` |
 | 9000 | Portainer UI | `PORTAINER_PORT` |
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
 
 ## Configuration notes
-- Config folders sit beside their Compose files, so relative paths in YAML stay valid.
+- Config folders sit beside their compose files, so relative paths in YAML stay valid.
 - Registry: delete enabled via `REGISTRY_STORAGE_DELETE_ENABLED=true`; data persisted in `registry-data`.
 - Prism A: gateway (nginx) listens on host port `PRISM_A_PORT` (default `8087`) and proxies internally to frontend/backend. Runtime settings/secrets live in `prism-a/backend.env`.
 - Prism B: duplicated Prism stack for A/B tests. Gateway listens on `PRISM_B_PORT` (default `8088`), PostgreSQL is also published on `PRISM_B_POSTGRES_PORT` (default `8432`), and the stack uses isolated Postgres data plus `prism-b/backend.env`.
 - Prism B includes `prism-b/clone-prism-a-volume.sh` to clone Prism A Postgres volume data into Prism B (stop Prism B first).
 - Clay: single Clay stack exposed on `CLAY_PORT` (default `8089`) with repo-local config in `clay/.env`.
-- Nacos: Nacos 3 console is exposed on `NACOS_CONSOLE_PORT` (default `8090`) at `/`, while the server API remains on `NACOS_SERVER_PORT` (default `8848`) at `/nacos`. The repo uses `8090` for the console to avoid colliding with Bark's existing `8080` host port.
-- CLIProxyAPI: pre-built Docker Hub image (`eceasy/cli-proxy-api:latest`). The primary API listens on `CLI_PROXY_API_PORT` (default `8317`). The tracked `cli-proxy-api/config.yaml` mounts to `/CLIProxyAPI/config.yaml`, and repo-local auth/session state persists under `cli-proxy-api/state/auth/`. Replace the placeholder API key in `cli-proxy-api/config.yaml` before starting. Copy `cli-proxy-api/env.example` to `cli-proxy-api/.env` only if you want to override the default port or timezone.
-- Herald: pulls pre-built GHCR images (`ghcr.io/coachpo/herald-backend:latest`, `ghcr.io/coachpo/herald-frontend:latest`) with `pull_policy: always`. nginx reverse-proxies to internal backend (:8100) and frontend (:3100). All runtime defaults are embedded in compose; only secrets (`DJANGO_SECRET_KEY`, etc.), `APP_BASE_URL`, and optional SMTP config go in `backend.env`.
-- Swiperflix: pre-built GHCR images. Reverse proxy on `SWIPERFLIX_PORT` (default `8084`). All runtime defaults embedded in compose; only OpenList credentials need `.env`.
-- Whisper: pre-built GHCR images. Caddy proxy on `WHISPER_PORT` (default `8085`). All runtime defaults embedded in compose; only `BACKEND_API_KEYS_CSV` and Google credentials JSON (`whisper/secrets/`) needed.
-- AssppWeb: pre-built GHCR image (`ghcr.io/lakr233/assppweb:latest`). UI listens on `ASSPP_PORT` (default `8086`); optional behavior/security tuning is exposed in `asspp/env.example`.
+- CLIProxyAPI: pre-built Docker Hub image. The primary API listens on `CLI_PROXY_API_PORT` (default `8317`). The tracked `cli-proxy-api/config.yaml` mounts to `/CLIProxyAPI/config.yaml`, and repo-local auth/session state persists under `cli-proxy-api/state/auth/`. Replace the placeholder API key in `cli-proxy-api/config.yaml` before starting.
+- Herald: uses pre-built GHCR images. `deploy.sh` pulls before `up -d`, nginx reverse-proxies to internal backend (:8100) and frontend (:3100), and runtime secrets, `APP_BASE_URL`, and optional SMTP config live in `herald/backend.env`.
+- Swiperflix: pre-built GHCR app images behind a pinned nginx reverse proxy on `SWIPERFLIX_PORT` (default `8084`).
+- Whisper: pre-built GHCR app images behind a pinned Caddy proxy on `WHISPER_PORT` (default `8085`). Only `BACKEND_API_KEYS_CSV` and Google credentials JSON (`whisper/secrets/`) are required.
+- AssppWeb: pre-built GHCR image. UI listens on `ASSPP_PORT` (default `8086`); optional behavior/security tuning is exposed in `asspp/env.example`.
 - Volumes persist between restarts; remove with `docker volume rm <name>` if you want a clean slate.
 
 ## Troubleshooting
-- Check status: `make status` or `docker compose -f <service>/compose.yml ps`
-- Follow logs: `make logs-<service>` or `cd <service> && docker compose logs -f`
-- Restart a service: `make restart-<service>`
-- Clone Prism A data into Prism B: `make clone-prism-b-from-prism-a`
+- Check status: `./deploy.sh status` or `docker compose -f <service>/compose.yml ps`
+- Follow logs: `./deploy.sh logs <service>`
+- Restart a service: `./deploy.sh restart <service> [--version TAG]`
+- Clone Prism A data into Prism B: `./deploy.sh clone-prism-b-from-prism-a`
+- Remove unused untagged images for discovered repositories: `./deploy.sh prune-images`
 - Ports in use: override the default port via the corresponding env var (see port map above).
-- ARM note: Mermaid image is pinned to `linux/arm64`; adjust `platform` if running on x86_64.
+- ARM note: Mermaid is pinned to `linux/arm64`; adjust `platform` if running on x86_64.
 
 ## Adding a new service
-1. Create `<name>/compose.yml` — the Makefile auto-discovers it.
+1. Create a folder anywhere in the repo with `compose.yml` (or another supported compose filename).
 2. Optionally add `<name>/<name>-config/` for config files and `<name>/env.example` for secrets.
 3. All ports should be configurable via `${ENV_VAR:-default}` in the compose file.
-4. Update this README's service table and port map.
+4. App images should use the path-derived version convention `${SERVICE_PATH_VERSION:-latest}` with non-alphanumeric characters converted to underscores.
+5. Update this README's service table and port map.

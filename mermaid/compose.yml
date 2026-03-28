@@ -1,7 +1,7 @@
 services:
   # Mermaid Live Editor - diagram editor UI
   mermaid-live-editor:
-    image: ghcr.io/mermaid-js/mermaid-live-editor:latest
+    image: ghcr.io/mermaid-js/mermaid-live-editor:${MERMAID_VERSION:-latest}
     container_name: mermaid-live-editor
     platform: linux/arm64
     restart: unless-stopped

@@ -19,7 +19,7 @@ services:
       - backend_net
 
   backend:
-    image: ghcr.io/coachpo/last-whisper-backend:latest
+    image: ghcr.io/coachpo/last-whisper-backend:${WHISPER_VERSION:-latest}
     container_name: lw-backend
     restart: unless-stopped
     expose:
@@ -48,7 +48,7 @@ services:
       - backend_net
 
   frontend:
-    image: ghcr.io/coachpo/last-whisper-frontend:latest
+    image: ghcr.io/coachpo/last-whisper-frontend:${WHISPER_VERSION:-latest}
     container_name: lw-frontend
     restart: unless-stopped
     expose:

@@ -1,6 +1,6 @@
 services:
   cli-proxy-api:
-    image: eceasy/cli-proxy-api:latest
+    image: eceasy/cli-proxy-api:${CLI_PROXY_API_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "${CLI_PROXY_API_PORT:-8317}:8317"

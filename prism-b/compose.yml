@@ -20,7 +20,7 @@ services:
       retries: 20
 
   backend:
-    image: ghcr.io/coachpo/prism-backend:latest
+    image: ghcr.io/coachpo/prism-backend:${PRISM_B_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -37,7 +37,7 @@ services:
       start_period: 15s
 
   frontend:
-    image: ghcr.io/coachpo/prism-frontend:latest
+    image: ghcr.io/coachpo/prism-frontend:${PRISM_B_VERSION:-latest}
     restart: unless-stopped
     expose:
       - "3000"

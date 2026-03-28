@@ -1,6 +1,6 @@
 services:
   asspp:
-    image: ghcr.io/lakr233/assppweb:latest
+    image: ghcr.io/lakr233/assppweb:${ASSPP_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "${ASSPP_PORT:-8086}:8080"
