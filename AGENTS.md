@@ -119,6 +119,7 @@ Common service layout:
 ./deploy.sh start <service> [--version TAG]
 ./deploy.sh stop <service>
 ./deploy.sh restart <service> [--version TAG]
+./deploy.sh force <service> [--version TAG]
 ./deploy.sh logs <service>
 ./deploy.sh start-all [--version TAG]
 ./deploy.sh stop-all

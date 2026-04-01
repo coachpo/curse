@@ -313,10 +313,22 @@ check_cli_behavior() {
   assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|up -d|APPS_GAMMA_APP_VERSION=latest'
 
   : > "$FIXTURE_LOG"
-   output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh restart apps/gamma-app --version 4.5.6)"
-   assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|down|APPS_GAMMA_APP_VERSION='
-   assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|pull|APPS_GAMMA_APP_VERSION=4.5.6'
-   assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|up -d|APPS_GAMMA_APP_VERSION=4.5.6'
+  output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh restart apps/gamma-app --version 4.5.6)"
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|down|APPS_GAMMA_APP_VERSION='
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|pull|APPS_GAMMA_APP_VERSION=4.5.6'
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|up -d|APPS_GAMMA_APP_VERSION=4.5.6'
+
+  : > "$FIXTURE_LOG"
+  output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh force apps/gamma-app --version 4.5.6)"
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|down -v --remove-orphans|APPS_GAMMA_APP_VERSION='
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|pull|APPS_GAMMA_APP_VERSION=4.5.6'
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|up -d|APPS_GAMMA_APP_VERSION=4.5.6'
+
+  : > "$FIXTURE_LOG"
+  output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh apps/gamma-app force)"
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|down -v --remove-orphans|APPS_GAMMA_APP_VERSION='
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|pull|APPS_GAMMA_APP_VERSION=latest'
+  assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|up -d|APPS_GAMMA_APP_VERSION=latest'
 
   : > "$FIXTURE_LOG"
    output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh logs apps/gamma-app)"

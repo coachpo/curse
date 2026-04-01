@@ -13,6 +13,7 @@ Self-hosted services packaged as separate Docker Compose bundles. `./deploy.sh` 
 ./deploy.sh <service> start
 ./deploy.sh start <service> --version 1.2.3
 ./deploy.sh restart <service> --version 1.2.3
+./deploy.sh force <service> --version 1.2.3
 ./deploy.sh stop <service>
 ./deploy.sh logs <service>
 ./deploy.sh start-all --version 1.2.3
@@ -23,7 +24,7 @@ Self-hosted services packaged as separate Docker Compose bundles. `./deploy.sh` 
 
 `deploy.sh` auto-discovers repo folders containing `compose.yml`, `compose.yaml`, `docker-compose.yml`, or `docker-compose.yaml`, and skips `.git` and `.sisyphus`. `start` always runs `docker compose pull` before `up -d`.
 
-The service-first shorthand also works for `stop`, `restart`, and `logs`.
+The service-first shorthand also works for `stop`, `restart`, `force`, and `logs`.
 
 App images use path-derived version vars such as `HERALD_VERSION`, `PRISM_A_VERSION`, `PRISM_B_VERSION`, and `CLI_PROXY_API_VERSION`. Nested service paths are uppercased with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`. Each app image defaults to `latest`; pinned dependencies stay pinned.
 
@@ -99,6 +100,7 @@ All ports are overridable via service env files or shell environment.
 - Check status: `./deploy.sh status` or `docker compose -f <service>/compose.yml ps`
 - Follow logs: `./deploy.sh logs <service>`
 - Restart a service: `./deploy.sh restart <service> [--version TAG]`
+- Force redeploy a service and wipe its Compose-managed volumes: `./deploy.sh force <service> [--version TAG]`
 - Clone Prism A data into Prism B: `./deploy.sh clone-prism-b-from-prism-a`
 - Remove unused untagged images for discovered repositories: `./deploy.sh prune-images`
 

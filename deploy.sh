@@ -198,6 +198,15 @@ restart_service() {
   start_service "$service" "$version"
 }
 
+force_service() {
+  local service="$1"
+  local version="$2"
+
+  require_service "$service"
+  run_compose "$service" down -v --remove-orphans
+  start_service "$service" "$version"
+}
+
 logs_service() {
   local service="$1"
 
@@ -293,6 +302,7 @@ Alternative single-service shorthand:
   ./deploy.sh <service> start [--version TAG]
   ./deploy.sh <service> stop
   ./deploy.sh <service> restart [--version TAG]
+  ./deploy.sh <service> force [--version TAG]
   ./deploy.sh <service> logs
 
 Commands:
@@ -302,6 +312,7 @@ Commands:
   ./deploy.sh start <service> [--version TAG]
   ./deploy.sh stop <service>
   ./deploy.sh restart <service> [--version TAG]
+  ./deploy.sh force <service> [--version TAG]
   ./deploy.sh logs <service>
   ./deploy.sh start-all [--version TAG]
   ./deploy.sh stop-all
@@ -329,7 +340,7 @@ parse_optional_version() {
 
 is_service_action() {
   case "$1" in
-    start|stop|restart|logs) return 0 ;;
+    start|stop|restart|force|logs) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -374,14 +385,16 @@ choose_action_interactive() {
   printf '  1) start\n' >&2
   printf '  2) stop\n' >&2
   printf '  3) restart\n' >&2
-  printf '  4) logs\n' >&2
+  printf '  4) force\n' >&2
+  printf '  5) logs\n' >&2
   printf '> ' >&2
   IFS= read -r selection
   case "$selection" in
     1) printf 'start\n' ;;
     2) printf 'stop\n' ;;
     3) printf 'restart\n' ;;
-    4) printf 'logs\n' ;;
+    4) printf 'force\n' ;;
+    5) printf 'logs\n' ;;
     *) die "invalid action selection '$selection'" ;;
   esac
 }
@@ -418,6 +431,10 @@ interactive_mode() {
     restart)
       version="$(prompt_version_interactive)"
       restart_service "$service" "$version"
+      ;;
+    force)
+      version="$(prompt_version_interactive)"
+      force_service "$service" "$version"
       ;;
     logs)
       logs_service "$service"
@@ -476,6 +493,13 @@ main() {
       service="$2"
       version="$(parse_optional_version 'usage: ./deploy.sh restart <service> [--version TAG]' "${@:3}")"
       restart_service "$service" "$version"
+      ;;
+    force)
+      [ "$#" -ge 2 ] || die 'usage: ./deploy.sh force <service> [--version TAG]'
+      discover_services
+      service="$2"
+      version="$(parse_optional_version 'usage: ./deploy.sh force <service> [--version TAG]' "${@:3}")"
+      force_service "$service" "$version"
       ;;
     logs)
       [ "$#" -eq 2 ] || die 'usage: ./deploy.sh logs <service>'
