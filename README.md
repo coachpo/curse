@@ -1,6 +1,6 @@
 # Curse Compose Stack
 
-Self-hosted services packaged as separate Docker Compose bundles. `./deploy.sh` is the canonical deployment interface, and ports stay configurable through service env files.
+Self-hosted services packaged as separate Docker Compose bundles. `./deploy.sh` is the canonical deployment interface, and the docs here stay aligned with the repo-root `AGENTS.md` guide.
 
 ## Quick start
 
@@ -26,7 +26,7 @@ Self-hosted services packaged as separate Docker Compose bundles. `./deploy.sh` 
 
 The service-first shorthand also works for `stop`, `restart`, `force`, and `logs`.
 
-App images use path-derived version vars such as `HERALD_VERSION`, `PRISM_A_VERSION`, `PRISM_B_VERSION`, and `CLI_PROXY_API_VERSION`. Nested service paths are uppercased with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`. Each app image defaults to `latest`; pinned dependencies stay pinned.
+App images use path-derived version vars such as `HERALD_VERSION`, `PRISM_A_VERSION`, `PRISM_B_VERSION`, `SWIPERFLIX_VERSION`, and `WHISPER_VERSION`. Nested service paths are uppercased with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`. Each app image defaults to `latest`; pinned dependencies stay pinned.
 
 ## Using Compose directly
 
@@ -36,7 +36,19 @@ docker compose -f <service>/compose.yml down
 docker compose -f <service>/compose.yml logs -f
 ```
 
+## Validation
+
+There is no repo-wide build step. This repository deploys pre-built images, so the main checks are shell syntax, compose validation, and the repo test script.
+
+```bash
+bash -n deploy.sh
+bash -n tests/test_deploy.sh
+bash tests/test_deploy.sh
+docker compose -f <service>/compose.yml config
+```
+
 ## Services at a glance
+
 | Service | Purpose | Default URL/Port | Config |
 | --- | --- | --- | --- |
 | Portainer | Docker management UI | http://localhost:9000, https://localhost:9443 (edge: 8000) | Volume `portainer_data` |
@@ -77,6 +89,7 @@ All ports are overridable via service env files or shell environment.
 | 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
 
 ## Configuration notes
+
 - `tests/test_deploy.sh` checks the deploy surface, version-variable convention, and discovery rules.
 - `deploy.sh ports` prints the defaults table, not live bindings.
 - Portainer is the only service with `restart: always`; the others use `restart: unless-stopped`.
@@ -97,6 +110,7 @@ All ports are overridable via service env files or shell environment.
 - AssppWeb, copy `asspp/env.example` to `asspp/.env` only if you need the optional settings there.
 
 ## Troubleshooting
+
 - Check status: `./deploy.sh status` or `docker compose -f <service>/compose.yml ps`
 - Follow logs: `./deploy.sh logs <service>`
 - Restart a service: `./deploy.sh restart <service> [--version TAG]`
@@ -105,6 +119,7 @@ All ports are overridable via service env files or shell environment.
 - Remove unused untagged images for discovered repositories: `./deploy.sh prune-images`
 
 ## Adding a new service
+
 1. Create a folder anywhere in the repo with `compose.yml` or another supported compose filename.
 2. Keep service-local config beside the compose file.
 3. Make host ports configurable with `${ENV_VAR:-default}` in the compose file.

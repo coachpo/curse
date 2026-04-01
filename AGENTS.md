@@ -1,156 +1,146 @@
-# PROJECT KNOWLEDGE BASE
+# Curse Repository Agent Guide
 
-**Generated:** 2026-03-28
-**Branch:** main
+> **For coding agents:** Use this file as the repo map and workflow contract. Follow the repo's shell-first conventions and verify every claim against files in this repository.
 
-## OVERVIEW
+**Goal:** Keep the Docker Compose stacks, deploy script, and docs aligned.
 
-Docker Compose infrastructure monorepo for self-hosted services. Each service directory owns its own deployable stack, config examples, and service-specific docs. Primary deployment target is `capy.lan` on ARM/Linux. The canonical deployment interface is the repo-root `deploy.sh` script.
+**Architecture:** This repo is an infra-only Compose monorepo. Each service directory owns one deployable stack, its compose file, and any service-local config or notes. `deploy.sh` is the canonical entry point, service discovery is automatic, and the README mirrors the operator-facing parts of that contract.
 
-## STRUCTURE
+**Tech Stack:** Bash, Docker Compose, YAML, Markdown.
 
-```text
-curse/
-├── asspp/               # AssppWeb (IPA install/acquisition UI)
-├── bark/                # Bark push gateway
-├── clay/                # Clay OpenAI-compatible proxy
-├── cli-proxy-api/       # CLIProxyAPI
-├── herald/              # Herald (nginx + backend + frontend + worker)
-├── mermaid/             # Mermaid Live Editor (ARM pinned)
-├── n8n/                 # n8n workflow automation
-├── portainer/           # Portainer CE
-├── prism-a/             # Prism A (nginx + backend + frontend + postgres)
-├── prism-b/             # Prism B clone stack for A/B testing
-├── registry/            # Local Docker registry + custom config
-├── swiperflix/          # Swiperflix (nginx + gateway + frontend)
-├── whisper/             # Last Whisper (Caddy + backend + frontend)
-├── deploy.sh            # Canonical deployment manager
-├── README.md            # Canonical service table + ports + runbook
-├── tests/               # Shell checks for deploy surface and repo conventions
-└── AGENTS.md
-```
+---
 
-Common service layout:
+## Repo shape
 
-```text
-<service>/
-├── compose.yml | compose.yaml | docker-compose.yml | docker-compose.yaml
-├── AGENTS.md                      # Optional service-local notes for complex stacks
-├── env.example                  # Optional template for .env
-├── backend.env.example          # Optional template for backend.env
-├── nginx.conf | Caddyfile       # Optional edge proxy config
-└── <service>-config/            # Optional nested config directory
-```
-
-## WHERE TO LOOK
-
-| Task | Location | Notes |
-|------|----------|-------|
-| Add a service | `<path>/<compose-file>` | Discovery is automatic from supported compose filenames |
-| Start/stop/restart/log services | `deploy.sh` | Supports `./deploy.sh start <service>` and `./deploy.sh <service> start` |
-| Runtime port bindings | `docker compose ... ps` after a start | `./deploy.sh ports` is the defaults table only |
-| Port defaults table | `README.md` + `deploy.sh ports` | Keep both in sync when changing ports |
-| Reverse proxy routes | `herald/nginx.conf`, `prism-a/nginx.conf`, `prism-b/nginx.conf`, `swiperflix/nginx.conf`, `whisper/Caddyfile` | API/UI path behavior lives here |
-| Clone Prism A data into Prism B | `prism-b/clone-prism-a-volume.sh` | Prism B must be stopped first |
-| Registry behavior | `registry/registry-config/config.yml` | Delete + CORS + upload purging |
-| Service test coverage | `tests/test_deploy.sh` | Encodes deploy-script and docs expectations |
-| Herald runtime secrets | `herald/backend.env.example` -> `herald/backend.env` | Replace placeholders before deploy |
-| Prism A runtime secrets | `prism-a/backend.env.example` -> `prism-a/backend.env` | File is named `backend.env.example` |
-| Prism B runtime secrets | `prism-b/backend.env.example` -> `prism-b/backend.env` | Same convention as Prism A |
-| Clay runtime env | `clay/env.example` -> `clay/.env` | `OPENAI_API_KEY` is required before start |
-| CLIProxyAPI tracked config | `cli-proxy-api/config.yaml`, `cli-proxy-api/state/auth/` | Replace placeholder API key; auth state stays repo-local |
-| Asspp optional tuning | `asspp/env.example` -> `asspp/.env` | Public base URL, cleanup, and access password are optional |
-| Whisper credential path | `whisper/env.example` + `whisper/secrets/` | Secret file path defaults to `./secrets/google-credentials.json` |
-
-## CODE MAP
-
-| Symbol / Surface | Type | Location | Role |
-|------------------|------|----------|------|
-| `discover_services` | Bash function | `deploy.sh` | Finds repo service folders by supported compose filenames |
-| `run_compose_with_version` | Bash function | `deploy.sh` | Sets per-service version env vars before compose commands |
-| `print_running_ports` | Bash function | `deploy.sh` | Prints published host ports after start/restart |
-| `prune_images` | Bash function | `deploy.sh` | Removes unused untagged images for repos referenced by discovered services |
-| `clone_prism_b_from_prism_a` | Bash function | `deploy.sh` | Dispatches to `./prism-b/clone-prism-a-volume.sh` |
-| `${SERVICE_NAME_VERSION:-latest}` | Compose convention | service compose files | App image tag override per service directory |
-
-## CONVENTIONS
-
-- Services are discovered from repo subdirectories containing one of: `compose.yml`, `compose.yaml`, `docker-compose.yml`, `docker-compose.yaml`.
+- `deploy.sh` is the canonical deployment interface.
+- Services are discovered from repo subdirectories that contain `compose.yml`, `compose.yaml`, `docker-compose.yml`, or `docker-compose.yaml`.
 - `.git` and `.sisyphus` are skipped by discovery.
-- Host ports use `${SERVICE_PORT:-default}` interpolation in each service `ports` stanza.
-- App images use per-service version variables derived from the repo-relative service path, uppercased with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`.
-- App images default to `latest` when no version is supplied.
-- Mixed stacks version only their app images; pinned dependencies like `nginx`, `postgres`, and `caddy` stay pinned.
-- `.env` and `backend.env` are gitignored; commit only template files (`env.example`, `backend.env.example`).
-- Restart policy is `unless-stopped` except Portainer (`always`).
-- Multi-container services expose internal ports and publish host ports only at the edge proxy, except Prism B Postgres which is intentionally published.
+- Service-local `AGENTS.md` files exist for `herald/`, `prism-a/`, `prism-b/`, `swiperflix/`, and `whisper/`.
+- `README.md` is the operator-facing summary and port table.
+- `tests/test_deploy.sh` is the main repo check and encodes the current deployment contract.
+
+## Non-negotiable repo rules
+
 - `deploy.sh start <service>` always runs `docker compose pull` before `up -d`.
-- Healthchecks in compose files are runtime probes; shell smoke tests live under `tests/`.
-- Explicit `name:` is used only for selected stacks (`herald`, `prism-a`, `prism-b`, `clay`).
-- Mermaid is pinned to `platform: linux/arm64`.
-- Complex multi-container stacks can carry a service-local `AGENTS.md` when parent-level rules are not specific enough.
+- Port defaults must stay in sync between `README.md` and `deploy.sh ports`.
+- App image tags use path-derived version vars, for example `HERALD_VERSION`, `PRISM_A_VERSION`, `PRISM_B_VERSION`, `SWIPERFLIX_VERSION`, and `WHISPER_VERSION`.
+- Those version vars are derived from the service path, uppercased, with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`.
+- App images default to `latest` when no version is supplied.
+- Mixed stacks keep pinned dependency images pinned, such as `nginx`, `postgres`, `caddy`, and other base services already fixed in compose files.
+- Runtime secrets like `.env`, `backend.env`, and credential files must never be committed.
+- Prism B clone operations require Prism B to be stopped first.
+- No Cursor rules, `.cursorrules`, or Copilot instructions were found in this repo.
 
-## ANTI-PATTERNS (THIS PROJECT)
+## What to inspect first
 
-- Never commit `.env`, `backend.env`, or real credential material.
-- Never hardcode service lists in `deploy.sh`; discovery must stay automatic.
-- Never change default ports without updating both `README.md` and `deploy.sh ports`.
-- Never use non-namespaced env vars that can collide across services.
-- Herald and Prism A/B use `backend.env` runtime files; do not rename templates without aligning compose `env_file`.
-- Never retag mixed-stack dependency images just to make version rollout easier; only app images should follow the per-service version variable pattern.
-- Prism B clone script requires Prism B to be stopped first.
+- `deploy.sh`, for CLI behavior, discovery, version injection, port reporting, and clone behavior.
+- `tests/test_deploy.sh`, for the current test story and repository conventions.
+- `README.md`, for the operator summary and the default port map.
+- `AGENTS.md` files under service directories, when touching service-local behavior or docs.
+- Representative compose files in `herald/`, `prism-a/`, `prism-b/`, `swiperflix/`, and `whisper/`, because they show the real image tags, restart policy, port exposure, and proxy style.
+- `.gitignore`, for the repo's secrets and runtime-file rules.
 
-## UNIQUE STYLES
+## Code style and conventions
 
-- Infra-only repo: orchestrates pre-built images; does not build application code locally.
-- Service ownership boundary is the directory containing the compose file; keep config artifacts co-located.
-- Security posture differs by service: Herald applies `read_only`, `tmpfs`, and `no-new-privileges`; others are lighter.
-- Proxy flavor varies by service (nginx vs Caddy); route semantics are service-specific.
-- `deploy.sh` provides both interactive UX for manual operation and deterministic CLI commands for automation.
-- `deploy.sh` is exercised by `tests/test_deploy.sh`, so docs should stay in step with that contract.
+- Bash scripts use `#!/usr/bin/env bash`, `set -euo pipefail`, and small focused functions.
+- Prefer standalone scripts with local helper functions over sourcing sibling shell files. This repo's committed shell entry points are self-contained.
+- Prefer `printf` over `echo` for user-facing output. Existing errors use `die()` and test failures use `fail()`.
+- Quote variable expansions and paths.
+- Use `local` variables inside functions.
+- Use arrays for lists and option sets when order matters, as in `COMPOSE_CANDIDATES`, `SERVICE_NAMES`, and `SERVICE_FILES`.
+- Keep non-fatal behavior explicit. In this repo, `|| true` is only acceptable for intentional best-effort cleanup or inspection.
+- Function names are lower_snake_case. Env vars and constants are upper snake case.
+- Service names come from repo-relative directory paths, so keep directory names stable and predictable.
+- Version env vars are path-derived, uppercased, with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`.
+- Compose files use `${ENV_VAR:-default}` interpolation for host ports and app image tags.
+- Keep pinned dependency images pinned. Only the app images should move with the per-service version variable.
+- Use lowercase, direct prose in Markdown.
+- Keep tables simple and factual.
+- When documenting ports, env vars, or commands, use the exact strings supported by `deploy.sh` and the compose files.
+- Avoid inventing wrapper tooling, Make targets, package-manager workflows, or CI surfaces that do not exist here.
 
-## COMMANDS
+## Build, lint, and test commands
+
+There is no repo-wide build step and no repo-wide lint command.
+
+- Full test suite: `bash tests/test_deploy.sh`
+- Shell syntax check for the deploy script: `bash -n deploy.sh`
+- Shell syntax check for the repo test script: `bash -n tests/test_deploy.sh`
+- Compose config validation for a service: `docker compose -f <service>/compose.yml config`
+- Service inventory: `./deploy.sh services`
+- Port summary: `./deploy.sh ports`
+- Full status view: `./deploy.sh status`
+
+## Single-test story
+
+The repo only has one committed shell test entry point, `tests/test_deploy.sh`. That script defines helper functions such as `check_repo_artifacts`, `check_compose_version_vars`, `create_fixture`, and `check_cli_behavior`, then runs them in `main()`.
+
+There is no first-class single-test runner. For focused checks, reuse those helper functions directly from a temporary sourced copy of the test file.
+
+Example: run only the repo artifact assertions from the repo root:
 
 ```bash
-# Preferred lifecycle interface
-./deploy.sh
-./deploy.sh services
-./deploy.sh <service> start
-./deploy.sh start <service> [--version TAG]
-./deploy.sh stop <service>
-./deploy.sh restart <service> [--version TAG]
-./deploy.sh force <service> [--version TAG]
-./deploy.sh logs <service>
-./deploy.sh start-all [--version TAG]
-./deploy.sh stop-all
-./deploy.sh status
-./deploy.sh ports
-./deploy.sh prune-images
-./deploy.sh clone-prism-b-from-prism-a
+python3 - <<'PY'
+from pathlib import Path
+lines = Path("tests/test_deploy.sh").read_text().splitlines()
+if lines and lines[-1].strip() == 'main "$@"':
+    lines = lines[:-1]
+Path("/tmp/test_deploy_funcs.sh").write_text("\n".join(lines) + "\n")
+PY
 
-# Direct compose (one service)
-docker compose -f <service>/compose.yml up -d
-docker compose -f <service>/compose.yml down
-docker compose -f <service>/compose.yml logs -f
+source /tmp/test_deploy_funcs.sh
+ROOT_DIR="$PWD"
+check_repo_artifacts
 ```
 
-## PORT MAP
+For helpers that need fixtures, add the setup and teardown calls before invoking the helper:
 
-| Port | Service | Env var |
-|------|---------|---------|
-| 5000 | Docker Registry | `REGISTRY_PORT` |
-| 8000 | Portainer edge | `PORTAINER_EDGE_PORT` |
-| 8080 | Bark | `BARK_PORT` |
-| 8081 | Herald (nginx proxy) | `HERALD_PORT` |
-| 8083 | Mermaid | `MERMAID_PORT` |
-| 8084 | Swiperflix proxy | `SWIPERFLIX_PORT` |
-| 8085 | Whisper proxy | `WHISPER_PORT` |
-| 8086 | AssppWeb | `ASSPP_PORT` |
-| 8087 | Prism A gateway (nginx) | `PRISM_A_PORT` |
-| 8088 | Prism B gateway (nginx) | `PRISM_B_PORT` |
-| 8432 | Prism B PostgreSQL | `PRISM_B_POSTGRES_PORT` |
-| 8089 | Clay | `CLAY_PORT` |
-| 8091 | n8n | `N8N_PORT` |
-| 8317 | CLIProxyAPI | `CLI_PROXY_API_PORT` |
-| 9000 | Portainer UI | `PORTAINER_PORT` |
-| 9443 | Portainer HTTPS | `PORTAINER_HTTPS_PORT` |
+```bash
+source /tmp/test_deploy_funcs.sh
+ROOT_DIR="$PWD"
+create_fixture
+trap destroy_fixture EXIT
+check_cli_behavior
+```
+
+## Practical command patterns
+
+```bash
+# List services
+./deploy.sh services
+
+# Show the documented port table
+./deploy.sh ports
+
+# Validate one compose file
+docker compose -f prism-a/compose.yml config
+
+# Run shell syntax checks
+bash -n deploy.sh
+bash -n tests/test_deploy.sh
+
+# Run the full repo test script
+bash tests/test_deploy.sh
+```
+
+## Service-specific notes
+
+- Herald uses `backend.env`, a hardened nginx edge, and deliberate read-only style hardening.
+- Prism A uses `backend.env`, an nginx gateway, and internal Postgres.
+- Prism B mirrors Prism A, but it also publishes PostgreSQL on `PRISM_B_POSTGRES_PORT` and includes `clone-prism-a-volume.sh`.
+- Swiperflix uses an nginx proxy and an optional host-local OpenList backend.
+- Whisper uses Caddy and expects Google credentials at `./secrets/google-credentials.json`.
+
+## Docs alignment rules
+
+- Keep `README.md` operator-facing and aligned with the same deploy and port contract.
+- When ports, runtime files, or version-variable rules change, update both `README.md` and the relevant compose file or helper in `deploy.sh`.
+- Keep service-local guidance inside each service directory when the behavior is specific to that stack.
+
+## What not to do
+
+- Do not commit runtime secrets or credential files.
+- Do not add custom build wrapper workflows or pretend they exist.
+- Do not claim npm, pytest, or root-level CI workflows exist here.
+- Do not change default ports unless the docs and `deploy.sh ports` are updated together.
+- Do not retag pinned dependency images just to simplify versioning.
