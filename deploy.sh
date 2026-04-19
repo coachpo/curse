@@ -146,15 +146,9 @@ Port  | Service             | Env var                | App
 8000  | Portainer edge      | PORTAINER_EDGE_PORT    | Portainer edge tunnel endpoint
 8080  | Bark                | BARK_PORT              | iOS push notification gateway
 8081  | Herald (nginx)      | HERALD_PORT            | Message ingest and rule-based notifications
-8083  | Mermaid             | MERMAID_PORT           | Live Mermaid diagram editor
-8084  | Swiperflix (nginx)  | SWIPERFLIX_PORT        | TikTok-style video player stack
-8085  | Whisper (caddy)     | WHISPER_PORT           | Dictation training platform
-8086  | AssppWeb            | ASSPP_PORT             | iOS IPA install/acquisition web UI
 8087  | Prism A (nginx)     | PRISM_A_PORT           | Self-hosted LLM proxy gateway
 8088  | Prism B (nginx)     | PRISM_B_PORT           | Prism clone for A/B testing
 8432  | Prism B Postgres    | PRISM_B_POSTGRES_PORT  | Direct host access to Prism B PostgreSQL
-8089  | Clay                | CLAY_PORT              | OpenAI-compatible API proxy
-8091  | n8n                 | N8N_PORT               | Workflow automation platform
 8317  | CLIProxyAPI         | CLI_PROXY_API_PORT     | Multi-provider CLI/API proxy
 9000  | Portainer UI        | PORTAINER_PORT         | Docker management dashboard
 9443  | Portainer HTTPS     | PORTAINER_HTTPS_PORT   | Docker management dashboard (HTTPS)

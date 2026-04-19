@@ -15,7 +15,7 @@
 - `deploy.sh` is the canonical deployment interface.
 - Services are discovered from repo subdirectories that contain `compose.yml`, `compose.yaml`, `docker-compose.yml`, or `docker-compose.yaml`.
 - `.git` and `.sisyphus` are skipped by discovery.
-- Service-local `AGENTS.md` files exist for `herald/`, `prism-a/`, `prism-b/`, `swiperflix/`, and `whisper/`.
+- Service-local `AGENTS.md` files exist for `herald/`, `prism-a/`, and `prism-b/`.
 - `README.md` is the operator-facing summary and port table.
 - `tests/test_deploy.sh` is the main repo check and encodes the current deployment contract.
 
@@ -23,7 +23,7 @@
 
 - `deploy.sh start <service>` always runs `docker compose pull` before `up -d`.
 - Port defaults must stay in sync between `README.md` and `deploy.sh ports`.
-- App image tags use path-derived version vars, for example `HERALD_VERSION`, `PRISM_A_VERSION`, `PRISM_B_VERSION`, `SWIPERFLIX_VERSION`, and `WHISPER_VERSION`.
+- App image tags use path-derived version vars, for example `HERALD_VERSION`, `PRISM_A_VERSION`, `PRISM_B_VERSION`, and `CLI_PROXY_API_VERSION`.
 - Those version vars are derived from the service path, uppercased, with non-alphanumeric characters converted to `_`, then suffixed with `_VERSION`.
 - App images default to `latest` when no version is supplied.
 - Mixed stacks keep pinned dependency images pinned, such as `nginx`, `postgres`, `caddy`, and other base services already fixed in compose files.
@@ -37,7 +37,7 @@
 - `tests/test_deploy.sh`, for the current test story and repository conventions.
 - `README.md`, for the operator summary and the default port map.
 - `AGENTS.md` files under service directories, when touching service-local behavior or docs.
-- Representative compose files in `herald/`, `prism-a/`, `prism-b/`, `swiperflix/`, and `whisper/`, because they show the real image tags, restart policy, port exposure, and proxy style.
+- Representative compose files in `herald/`, `prism-a/`, `prism-b/`, and `cli-proxy-api/`, because they show the real image tags, restart policy, port exposure, and proxy style.
 - `.gitignore`, for the repo's secrets and runtime-file rules.
 
 ## Code style and conventions
@@ -128,8 +128,6 @@ bash tests/test_deploy.sh
 - Herald uses `backend.env`, a hardened nginx edge, and deliberate read-only style hardening.
 - Prism A uses `backend.env`, an nginx gateway, and internal Postgres.
 - Prism B mirrors Prism A, but it also publishes PostgreSQL on `PRISM_B_POSTGRES_PORT` and includes `clone-prism-a-volume.sh`.
-- Swiperflix uses an nginx proxy and an optional host-local OpenList backend.
-- Whisper uses Caddy and expects Google credentials at `./secrets/google-credentials.json`.
 
 ## Docs alignment rules
 

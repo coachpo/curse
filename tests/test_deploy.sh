@@ -26,6 +26,15 @@ assert_contains() {
   [[ "$haystack" == *"$needle"* ]] || fail "expected output to contain '$needle'"
 }
 
+assert_not_contains_line() {
+  local haystack="$1"
+  local needle="$2"
+
+  case $'\n'"$haystack"$'\n' in
+    *$'\n'"$needle"$'\n'*) fail "expected output to not contain line '$needle'" ;;
+  esac
+}
+
 assert_file_contains() {
   local file="$1"
   local needle="$2"
@@ -57,25 +66,35 @@ check_repo_artifacts() {
   assert_file_exists "$ROOT_DIR/deploy.sh"
   assert_executable "$ROOT_DIR/deploy.sh"
   assert_path_missing "$ROOT_DIR/Makefile"
+  assert_path_missing "$ROOT_DIR/asspp/compose.yml"
+  assert_path_missing "$ROOT_DIR/clay/compose.yml"
+  assert_path_missing "$ROOT_DIR/mermaid/compose.yml"
+  assert_path_missing "$ROOT_DIR/n8n/compose.yml"
+  assert_path_missing "$ROOT_DIR/swiperflix/compose.yml"
+  assert_path_missing "$ROOT_DIR/whisper/compose.yml"
 
   assert_file_contains "$ROOT_DIR/README.md" "./deploy.sh"
   assert_file_not_contains "$ROOT_DIR/README.md" "Using Make"
   assert_file_not_contains "$ROOT_DIR/README.md" "make start-"
   assert_file_not_contains "$ROOT_DIR/README.md" "Nacos"
+  assert_file_not_contains "$ROOT_DIR/README.md" "AssppWeb"
+  assert_file_not_contains "$ROOT_DIR/README.md" "Mermaid Live Editor"
+  assert_file_not_contains "$ROOT_DIR/README.md" "| Clay |"
+  assert_file_not_contains "$ROOT_DIR/README.md" "| Swiperflix |"
+  assert_file_not_contains "$ROOT_DIR/README.md" "| Whisper |"
+  assert_file_not_contains "$ROOT_DIR/README.md" "| n8n |"
 
   assert_file_contains "$ROOT_DIR/AGENTS.md" "deploy.sh"
   assert_file_not_contains "$ROOT_DIR/AGENTS.md" "Makefile"
   assert_file_not_contains "$ROOT_DIR/AGENTS.md" "make start-"
+  assert_file_not_contains "$ROOT_DIR/AGENTS.md" "swiperflix/"
+  assert_file_not_contains "$ROOT_DIR/AGENTS.md" "whisper/"
   assert_file_not_contains "$ROOT_DIR/prism-b/clone-prism-a-volume.sh" "make stop-"
 }
 
 check_compose_version_vars() {
-  assert_file_contains "$ROOT_DIR/asspp/compose.yml" 'image: ghcr.io/lakr233/assppweb:${ASSPP_VERSION:-latest}'
   assert_file_contains "$ROOT_DIR/bark/compose.yml" 'image: finab/bark-server:${BARK_VERSION:-latest}'
-  assert_file_contains "$ROOT_DIR/clay/compose.yml" 'image: ghcr.io/coachpo/clay:${CLAY_VERSION:-latest}'
   assert_file_contains "$ROOT_DIR/cli-proxy-api/compose.yml" 'image: eceasy/cli-proxy-api:${CLI_PROXY_API_VERSION:-latest}'
-  assert_file_contains "$ROOT_DIR/mermaid/compose.yml" 'image: ghcr.io/mermaid-js/mermaid-live-editor:${MERMAID_VERSION:-latest}'
-  assert_file_contains "$ROOT_DIR/n8n/compose.yml" 'image: docker.n8n.io/n8nio/n8n:${N8N_VERSION:-latest}'
   assert_file_contains "$ROOT_DIR/portainer/compose.yml" 'image: portainer/portainer-ce:${PORTAINER_VERSION:-latest}'
   assert_file_contains "$ROOT_DIR/registry/compose.yml" 'image: registry:${REGISTRY_VERSION:-latest}'
 
@@ -85,18 +104,12 @@ check_compose_version_vars() {
   assert_file_contains "$ROOT_DIR/prism-a/compose.yml" 'image: ghcr.io/coachpo/prism-frontend:${PRISM_A_VERSION:-latest}'
   assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'image: ghcr.io/coachpo/prism-backend:${PRISM_B_VERSION:-latest}'
   assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'image: ghcr.io/coachpo/prism-frontend:${PRISM_B_VERSION:-latest}'
-  assert_file_contains "$ROOT_DIR/swiperflix/compose.yml" 'image: ghcr.io/coachpo/swiperflix-player:${SWIPERFLIX_VERSION:-latest}'
-  assert_file_contains "$ROOT_DIR/swiperflix/compose.yml" 'image: ghcr.io/coachpo/swiperflix-gateway:${SWIPERFLIX_VERSION:-latest}'
-  assert_file_contains "$ROOT_DIR/whisper/compose.yml" 'image: ghcr.io/coachpo/last-whisper-backend:${WHISPER_VERSION:-latest}'
-  assert_file_contains "$ROOT_DIR/whisper/compose.yml" 'image: ghcr.io/coachpo/last-whisper-frontend:${WHISPER_VERSION:-latest}'
 
   assert_file_contains "$ROOT_DIR/herald/compose.yml" 'image: nginx:1.27-alpine'
   assert_file_contains "$ROOT_DIR/prism-a/compose.yml" 'image: postgres:16-alpine'
   assert_file_contains "$ROOT_DIR/prism-a/compose.yml" 'image: nginx:1.27-alpine'
   assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'image: postgres:16-alpine'
   assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'image: nginx:1.27-alpine'
-  assert_file_contains "$ROOT_DIR/swiperflix/compose.yml" 'image: nginx:1.27-alpine'
-  assert_file_contains "$ROOT_DIR/whisper/compose.yml" 'image: caddy:2.8-alpine'
 }
 
 create_fixture() {
@@ -280,9 +293,23 @@ check_cli_behavior() {
    assert_contains "$output" 'delta-env'
    assert_contains "$output" 'prism-b'
 
+  output="$(cd "$ROOT_DIR" && bash ./deploy.sh services)"
+  assert_not_contains_line "$output" 'asspp'
+  assert_not_contains_line "$output" 'clay'
+  assert_not_contains_line "$output" 'mermaid'
+  assert_not_contains_line "$output" 'n8n'
+  assert_not_contains_line "$output" 'swiperflix'
+  assert_not_contains_line "$output" 'whisper'
+
   output="$(cd "$ROOT_DIR" && bash ./deploy.sh ports)"
   assert_contains "$output" 'CLI_PROXY_API_PORT'
   assert_contains "$output" 'PRISM_B_PORT'
+  assert_file_not_contains "$ROOT_DIR/deploy.sh" 'ASSPP_PORT'
+  assert_file_not_contains "$ROOT_DIR/deploy.sh" 'CLAY_PORT'
+  assert_file_not_contains "$ROOT_DIR/deploy.sh" 'MERMAID_PORT'
+  assert_file_not_contains "$ROOT_DIR/deploy.sh" 'N8N_PORT'
+  assert_file_not_contains "$ROOT_DIR/deploy.sh" 'SWIPERFLIX_PORT'
+  assert_file_not_contains "$ROOT_DIR/deploy.sh" 'WHISPER_PORT'
 
   : > "$FIXTURE_LOG"
   output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh status)"
