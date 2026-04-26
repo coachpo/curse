@@ -25,10 +25,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - ./backend.env
+    environment:
+      PRISM_CONFIG_PATH: /etc/prism/config.json
     expose:
       - "8000"
+    volumes:
+      - ./config.json:/etc/prism/config.json:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -sS http://127.0.0.1:8000/health >/dev/null"]
       interval: 10s
