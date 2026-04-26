@@ -50,6 +50,21 @@ compose_file_for_service() {
   return 1
 }
 
+service_env_file_for_service() {
+  local service="$1"
+  local service_dir="$ROOT_DIR/$service"
+  local candidate=""
+
+  for candidate in .env backend.env; do
+    if [ -f "$service_dir/$candidate" ]; then
+      printf '%s/%s\n' "$service" "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 require_service() {
   compose_file_for_service "$1" >/dev/null 2>&1 || die "unknown service '$1'"
 }
@@ -64,19 +79,36 @@ version_var_name() {
 
 run_compose() {
   local service="$1"
+  local compose_file=""
+  local env_file=""
+  local -a command=(docker compose)
   shift
 
-  (cd "$ROOT_DIR" && docker compose -f "$(compose_file_for_service "$service")" "$@")
+  compose_file="$(compose_file_for_service "$service")"
+  if env_file="$(service_env_file_for_service "$service")"; then
+    command+=(--env-file "$env_file")
+  fi
+  command+=(-f "$compose_file")
+
+  (cd "$ROOT_DIR" && "${command[@]}" "$@")
 }
 
 run_compose_with_version() {
   local service="$1"
   local version="$2"
+  local compose_file=""
+  local env_file=""
   local version_var=""
+  local -a command=(docker compose)
   shift 2
 
+  compose_file="$(compose_file_for_service "$service")"
+  if env_file="$(service_env_file_for_service "$service")"; then
+    command+=(--env-file "$env_file")
+  fi
+  command+=(-f "$compose_file")
   version_var="$(version_var_name "$service")"
-  (cd "$ROOT_DIR" && env "$version_var=$version" docker compose -f "$(compose_file_for_service "$service")" "$@")
+  (cd "$ROOT_DIR" && env "$version_var=$version" "${command[@]}" "$@")
 }
 
 print_running_ports() {

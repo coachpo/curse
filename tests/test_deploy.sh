@@ -90,6 +90,9 @@ check_repo_artifacts() {
   assert_file_not_contains "$ROOT_DIR/AGENTS.md" "swiperflix/"
   assert_file_not_contains "$ROOT_DIR/AGENTS.md" "whisper/"
   assert_file_not_contains "$ROOT_DIR/prism-b/clone-prism-a-volume.sh" "make stop-"
+  assert_file_exists "$ROOT_DIR/prism-a/config.json.example"
+  assert_file_exists "$ROOT_DIR/prism-b/config.json.example"
+  assert_file_contains "$ROOT_DIR/.gitignore" '**/config.json'
 }
 
 check_compose_version_vars() {
@@ -110,6 +113,13 @@ check_compose_version_vars() {
   assert_file_contains "$ROOT_DIR/prism-a/compose.yml" 'image: nginx:1.27-alpine'
   assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'image: postgres:16-alpine'
   assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'image: nginx:1.27-alpine'
+
+  assert_file_contains "$ROOT_DIR/prism-a/compose.yml" 'PRISM_CONFIG_PATH: /etc/prism/config.json'
+  assert_file_contains "$ROOT_DIR/prism-a/compose.yml" './config.json:/etc/prism/config.json:ro'
+  assert_file_not_contains "$ROOT_DIR/prism-a/compose.yml" 'env_file:'
+  assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'PRISM_CONFIG_PATH: /etc/prism/config.json'
+  assert_file_contains "$ROOT_DIR/prism-b/compose.yml" './config.json:/etc/prism/config.json:ro'
+  assert_file_not_contains "$ROOT_DIR/prism-b/compose.yml" 'env_file:'
 }
 
 create_fixture() {
@@ -145,6 +155,10 @@ services:
     image: postgres:16-alpine
 EOF
 
+  cat <<'EOF' > "$FIXTURE_ROOT/prism-b/backend.env"
+PRISM_B_PORT=18088
+EOF
+
   cat <<'EOF' > "$FIXTURE_ROOT/delta-env/compose.yml"
 services:
   delta-env:
@@ -168,22 +182,34 @@ set -euo pipefail
 log_file="${FIXTURE_LOG:?}"
 
 compose_file=''
-if [ "$#" -ge 3 ] && [ "$1" = "compose" ] && [ "$2" = "-f" ]; then
-  compose_file="$3"
-  shift 3
-fi
-
+env_file=''
 service_version=''
+
+if [ "$#" -ge 1 ] && [ "$1" = "compose" ]; then
+  shift
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --env-file)
+        env_file="$2"
+        shift 2
+        ;;
+      -f)
+        compose_file="$2"
+        shift 2
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
   case "$compose_file" in
     alpha-service/*) service_version="ALPHA_SERVICE_VERSION=${ALPHA_SERVICE_VERSION:-}" ;;
     apps/gamma-app/*) service_version="APPS_GAMMA_APP_VERSION=${APPS_GAMMA_APP_VERSION:-}" ;;
     prism-b/*) service_version="PRISM_B_VERSION=${PRISM_B_VERSION:-}" ;;
     delta-env/*) service_version="DELTA_ENV_VERSION=${DELTA_ENV_VERSION:-}" ;;
-esac
-
-if [ "$#" -ge 1 ] && [ "$1" = "compose" ]; then
-  printf 'unexpected nested compose invocation\n' >&2
-  exit 1
+  esac
 fi
 
 if [ -n "$compose_file" ]; then
@@ -193,7 +219,7 @@ if [ -n "$compose_file" ]; then
   if [ "$#" -gt 0 ]; then
     action="$action $*"
   fi
-  printf 'compose|%s|%s|%s\n' "$compose_file" "$action" "$service_version" >> "$log_file"
+  printf 'compose|%s|%s|%s|ENV_FILE=%s\n' "$compose_file" "$action" "$service_version" "$env_file" >> "$log_file"
   case "$command_name" in
     pull|down|logs|up)
       exit 0
@@ -369,7 +395,7 @@ check_cli_behavior() {
   output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh start-all --version 9.9.9)"
   assert_log_contains 'compose|alpha-service/compose.yml|pull|ALPHA_SERVICE_VERSION=9.9.9'
    assert_log_contains 'compose|apps/gamma-app/docker-compose.yaml|pull|APPS_GAMMA_APP_VERSION=9.9.9'
-  assert_log_contains 'compose|prism-b/compose.yml|pull|PRISM_B_VERSION=9.9.9'
+  assert_log_contains 'compose|prism-b/compose.yml|pull|PRISM_B_VERSION=9.9.9|ENV_FILE=prism-b/backend.env'
 
   : > "$FIXTURE_LOG"
   output="$(cd "$FIXTURE_ROOT" && bash ./deploy.sh stop-all)"
