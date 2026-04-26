@@ -13,9 +13,11 @@ Prism A is the baseline Prism stack. Compose-time overrides live in `backend.env
 
 ## CONVENTIONS
 
-- Copy `backend.env.example` to `backend.env` and `config.json.example` to `config.json` before deploy.
-- Keep `PRISM_A_PORT` in `backend.env`, and keep the bootstrap `database.url`, auth secrets, bundle key, and CORS values aligned in `config.json`.
+- Copy `config.json.example` to `config.json` before deploy.
+- Copy `backend.env.example` to `backend.env` only when you need non-default compose-time overrides such as `PRISM_A_PORT`.
+- Keep `PRISM_A_PORT` in `backend.env` when overriding it, and keep the bootstrap `database.url`, auth secrets, bundle key, and CORS values aligned in `config.json`.
 - The backend reads `PRISM_CONFIG_PATH=/etc/prism/config.json` from the compose file; the JSON file is the steady-state startup contract.
+- Old encrypted Prism bootstrap files are unsupported; replace them with the plaintext `config.json` layout before deploy.
 - Postgres stays internal-only with `expose: 5432`; only the nginx gateway publishes a host port.
 - nginx sends `/api/`, `/v1/`, `/v1beta/`, `/docs`, `/redoc`, and `/openapi.json` to backend.
 - nginx upgrades `/api/realtime/ws` as a websocket path and sends everything else to frontend.

@@ -36,6 +36,8 @@ docker compose -f <service>/compose.yml down
 docker compose -f <service>/compose.yml logs -f
 ```
 
+For Prism A and Prism B, add `--env-file prism-a/backend.env` or `--env-file prism-b/backend.env` when you want service-local port overrides to apply through direct `docker compose` commands. The required runtime file for both Prism stacks is still `config.json`.
+
 ## Validation
 
 There is no repo-wide build step. This repository deploys pre-built images, so the main checks are shell syntax, compose validation, and the repo test script.
@@ -89,8 +91,9 @@ All ports are overridable via service env files or shell environment.
 ## Setup gotchas by service
 
 - Herald, copy `herald/backend.env.example` to `herald/backend.env` and fill the secret keys plus `APP_BASE_URL`. SMTP is optional.
-- Prism A, copy `prism-a/backend.env.example` to `prism-a/backend.env` for compose-time overrides, then copy `prism-a/config.json.example` to `prism-a/config.json` and update the bootstrap `database.url`, auth secrets, bundle key, and any CORS origins you need.
-- Prism B, copy `prism-b/backend.env.example` to `prism-b/backend.env` for compose-time overrides, then copy `prism-b/config.json.example` to `prism-b/config.json` and update the same bootstrap values plus any Prism B-specific host or CORS settings.
+- Prism A, copy `prism-a/config.json.example` to `prism-a/config.json` before deploy. Copy `prism-a/backend.env.example` to `prism-a/backend.env` only if you need non-default published ports or other compose-time overrides.
+- Prism B, copy `prism-b/config.json.example` to `prism-b/config.json` before deploy. Copy `prism-b/backend.env.example` to `prism-b/backend.env` only if you need non-default published ports.
+- Old encrypted Prism bootstrap files are no longer supported. Replace them with the current plaintext `config.json` shape before booting Prism A or Prism B.
 - CLIProxyAPI, copy `cli-proxy-api/env.example` if needed, then edit `cli-proxy-api/config.yaml` and replace the placeholder API key.
 
 ## Troubleshooting

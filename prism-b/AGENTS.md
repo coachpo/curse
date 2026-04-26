@@ -14,10 +14,12 @@ Prism B mirrors Prism A for A/B work. Compose-time overrides live in `backend.en
 
 ## CONVENTIONS
 
-- Copy `backend.env.example` to `backend.env` and `config.json.example` to `config.json` before deploy.
+- Copy `config.json.example` to `config.json` before deploy.
+- Copy `backend.env.example` to `backend.env` only when you need non-default compose-time overrides such as `PRISM_B_PORT` or `PRISM_B_POSTGRES_PORT`.
 - Keep `PRISM_B_PORT` and `PRISM_B_POSTGRES_PORT` aligned with the exposed ports you want.
 - Keep the bootstrap `database.url`, auth secrets, bundle key, and CORS values aligned in `config.json`.
 - The backend reads `PRISM_CONFIG_PATH=/etc/prism/config.json` from the compose file; the JSON file is the steady-state startup contract.
+- Old encrypted Prism bootstrap files are unsupported; replace them with the plaintext `config.json` layout before deploy.
 - Stop Prism B before running the clone script.
 - Postgres is intentionally host-published on `PRISM_B_POSTGRES_PORT` instead of staying internal-only.
 - nginx routes `/api/`, `/v1/`, `/v1beta/`, `/docs`, `/redoc`, and `/openapi.json` to backend.
