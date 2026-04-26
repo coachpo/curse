@@ -55,7 +55,7 @@ service_env_file_for_service() {
   local service_dir="$ROOT_DIR/$service"
   local candidate=""
 
-  for candidate in .env backend.env; do
+  for candidate in backend.env .env; do
     if [ -f "$service_dir/$candidate" ]; then
       printf '%s/%s\n' "$service" "$candidate"
       return 0

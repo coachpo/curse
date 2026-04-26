@@ -159,6 +159,10 @@ EOF
 PRISM_B_PORT=18088
 EOF
 
+  cat <<'EOF' > "$FIXTURE_ROOT/prism-b/.env"
+PRISM_B_PORT=28088
+EOF
+
   cat <<'EOF' > "$FIXTURE_ROOT/delta-env/compose.yml"
 services:
   delta-env:
