@@ -25,3 +25,4 @@ node_modules/
 
 # Herald backend secrets
 **/backend.env
+**/config.json
