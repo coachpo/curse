@@ -30,7 +30,7 @@ services:
     expose:
       - "8000"
     volumes:
-      - ./config.json:/etc/prism/config.json:ro
+      - ./config.json:/etc/prism/config.json
     healthcheck:
       test: ["CMD-SHELL", "curl -sS http://127.0.0.1:8000/health >/dev/null"]
       interval: 10s
