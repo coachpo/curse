@@ -12,27 +12,51 @@
   },
   "database": {
     "url": "postgres://postgres:postgres@postgres:5432/prism_v1?sslmode=disable",
-    "runtimePool": {
-      "maxConns": 4,
-      "minIdleConns": 1
+    "pools": {
+      "totalMaxConns": 42,
+      "management": {
+        "maxConns": 6,
+        "minIdleConns": 0
+      },
+      "runtimeExecution": {
+        "maxConns": 14,
+        "minIdleConns": 1
     },
-    "managementPool": {
-      "maxConns": 12,
-      "minIdleConns": 0
+      "runtimeTelemetry": {
+        "maxConns": 7,
+        "minIdleConns": 0
+      },
+      "runtimeFeedback": {
+        "maxConns": 3,
+        "minIdleConns": 0
+      },
+      "realtime": {
+        "maxConns": 4,
+        "minIdleConns": 0
+      },
+      "cacheRefresh": {
+        "maxConns": 4,
+        "minIdleConns": 0
+      },
+      "backgroundJobs": {
+        "maxConns": 4,
+        "minIdleConns": 0
+    }
     },
     "managementAdmission": {
-      "m2MaxConcurrent": 6,
-      "m3MaxConcurrent": 2
+      "m2MaxConcurrent": 5,
+      "m3MaxConcurrent": 5
     }
   },
   "runtime": {
     "bufferingMode": "buffered",
-    "secretEncryptionKey": "replace-with-a-long-random-runtime-secret",
+    "secretEncryptionKey": "prism-dev-runtime-secret-change-me",
     "transport": {
       "maxIdleConns": 100,
       "maxIdleConnsPerHost": 8,
       "maxConnsPerHost": 0,
-      "idleConnTimeout": "90s",
+      "requestTimeout": "60s",
+      "idleConnTimeout": "1m30s",
       "responseHeaderTimeout": "0s",
       "tlsHandshakeTimeout": "10s",
       "expectContinueTimeout": "1s"
@@ -40,12 +64,12 @@
   },
   "http": {
     "corsAllowedOrigins": [
-      "http://localhost:8087",
-      "http://127.0.0.1:8087"
+      "http://localhost:15173",
+      "http://127.0.0.1:15173"
     ]
   },
   "auth": {
-    "jwtSigningKey": "replace-with-a-long-random-jwt-secret",
+    "jwtSigningKey": "prism-dev-jwt-secret-change-me",
     "accessTokenTtlSeconds": 900,
     "refreshTokenTtlSeconds": 604800,
     "resetCodeTtlSeconds": 600,
@@ -53,7 +77,10 @@
     "refreshCookieName": "prism_refresh_token",
     "cookieSecure": false
   },
+  "mail": {
+    "enabled": false
+  },
   "stateTransfer": {
-    "bundleEncryptionKey": "replace-with-a-long-random-bundle-secret"
+    "bundleEncryptionKey": "prism-dev-runtime-secret-change-me"
   }
 }
