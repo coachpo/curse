@@ -115,10 +115,12 @@ check_compose_version_vars() {
   assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'image: nginx:1.27-alpine'
 
   assert_file_contains "$ROOT_DIR/prism-a/compose.yml" 'PRISM_CONFIG_PATH: /etc/prism/config.json'
-  assert_file_contains "$ROOT_DIR/prism-a/compose.yml" './config.json:/etc/prism/config.json:ro'
+  assert_file_contains "$ROOT_DIR/prism-a/compose.yml" './prism-config:/etc/prism:rw'
+  assert_file_not_contains "$ROOT_DIR/prism-a/compose.yml" './config.json:/etc/prism/config.json'
   assert_file_not_contains "$ROOT_DIR/prism-a/compose.yml" 'env_file:'
   assert_file_contains "$ROOT_DIR/prism-b/compose.yml" 'PRISM_CONFIG_PATH: /etc/prism/config.json'
-  assert_file_contains "$ROOT_DIR/prism-b/compose.yml" './config.json:/etc/prism/config.json:ro'
+  assert_file_contains "$ROOT_DIR/prism-b/compose.yml" './prism-config:/etc/prism:rw'
+  assert_file_not_contains "$ROOT_DIR/prism-b/compose.yml" './config.json:/etc/prism/config.json'
   assert_file_not_contains "$ROOT_DIR/prism-b/compose.yml" 'env_file:'
 }
 

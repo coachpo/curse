@@ -36,7 +36,7 @@ docker compose -f <service>/compose.yml down
 docker compose -f <service>/compose.yml logs -f
 ```
 
-For Prism A and Prism B, add `--env-file prism-a/backend.env` or `--env-file prism-b/backend.env` when you want service-local port overrides to apply through direct `docker compose` commands. The required runtime file for both Prism stacks is still `config.json`.
+For Prism A and Prism B, add `--env-file prism-a/backend.env` or `--env-file prism-b/backend.env` when you want service-local port overrides to apply through direct `docker compose` commands. The required runtime file for both Prism stacks is `prism-config/config.json`.
 
 ## Validation
 
@@ -57,8 +57,8 @@ docker compose -f <service>/compose.yml config
 | Bark | iOS push gateway | http://localhost:8080 | — |
 | Registry | Local Docker registry | http://localhost:5000 | `registry/registry-config/config.yml`, volume `registry-data` |
 | Herald | Herald stack | http://localhost:8081 | `herald/backend.env`, `herald/nginx.conf` |
-| Prism A | Prism stack | http://localhost:8087 | `prism-a/backend.env`, `prism-a/config.json`, `prism-a/nginx.conf` |
-| Prism B | Prism clone for A/B testing | http://localhost:8088, PostgreSQL: localhost:8432 | `prism-b/backend.env`, `prism-b/config.json`, `prism-b/nginx.conf` |
+| Prism A | Prism stack | http://localhost:8087 | `prism-a/backend.env`, `prism-a/prism-config/config.json`, `prism-a/nginx.conf` |
+| Prism B | Prism clone for A/B testing | http://localhost:8088, PostgreSQL: localhost:8432 | `prism-b/backend.env`, `prism-b/prism-config/config.json`, `prism-b/nginx.conf` |
 | CLIProxyAPI | Multi-provider CLI/API proxy | http://localhost:8317 | `cli-proxy-api/env.example`, `cli-proxy-api/config.yaml` |
 
 ## Default port map
@@ -91,8 +91,8 @@ All ports are overridable via service env files or shell environment.
 ## Setup gotchas by service
 
 - Herald, copy `herald/backend.env.example` to `herald/backend.env` and fill the secret keys plus `APP_BASE_URL`. SMTP is optional.
-- Prism A, copy `prism-a/config.json.example` to `prism-a/config.json` before deploy. Copy `prism-a/backend.env.example` to `prism-a/backend.env` only if you need non-default published ports or other compose-time overrides.
-- Prism B, copy `prism-b/config.json.example` to `prism-b/config.json` before deploy. Copy `prism-b/backend.env.example` to `prism-b/backend.env` only if you need non-default published ports.
+- Prism A, copy `prism-a/config.json.example` to `prism-a/prism-config/config.json` before deploy. Copy `prism-a/backend.env.example` to `prism-a/backend.env` only if you need non-default published ports or other compose-time overrides.
+- Prism B, copy `prism-b/config.json.example` to `prism-b/prism-config/config.json` before deploy. Copy `prism-b/backend.env.example` to `prism-b/backend.env` only if you need non-default published ports.
 - Old encrypted Prism bootstrap files are no longer supported. Replace them with the current plaintext `config.json` shape before booting Prism A or Prism B.
 - CLIProxyAPI, copy `cli-proxy-api/env.example` if needed, then edit `cli-proxy-api/config.yaml` and replace the placeholder API key.
 

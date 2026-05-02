@@ -126,8 +126,8 @@ bash tests/test_deploy.sh
 ## Service-specific notes
 
 - Herald uses `backend.env`, a hardened nginx edge, and deliberate read-only style hardening.
-- Prism A uses `backend.env` for compose-time overrides, a mounted `config.json` bootstrap file, an nginx gateway, and internal Postgres.
-- Prism B mirrors Prism A with its own `config.json` bootstrap file, but it also publishes PostgreSQL on `PRISM_B_POSTGRES_PORT` and includes `clone-prism-a-volume.sh`.
+- Prism A uses `backend.env` for compose-time overrides, a mounted `prism-config/config.json` bootstrap file, an nginx gateway, and internal Postgres.
+- Prism B mirrors Prism A with its own `prism-config/config.json` bootstrap file, but it also publishes PostgreSQL on `PRISM_B_POSTGRES_PORT` and includes `clone-prism-a-volume.sh`.
 
 ## Docs alignment rules
 
