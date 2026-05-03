@@ -1,6 +1,7 @@
 host: ""
 port: 8317
 remote-management:
+  panel-github-repository: "https://github.com/seakee/CPA-Manager"
   allow-remote: true
   secret-key: "$2a$10$uUu0bxidPZSvmYr2zCWpQeRjf7fS4PnOIILTOr3yZhNkc/zBMDqJS"
   disable-control-panel: false
@@ -36,6 +37,3 @@ codex-api-key:
 ws-auth: true
 max-retry-interval: 5
 redis-usage-queue-retention-seconds: 60
-
-remote-management:
-  panel-github-repository: "https://github.com/seakee/CPA-Manager"
