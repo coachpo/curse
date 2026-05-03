@@ -1,21 +1,41 @@
 host: ""
 port: 8317
-
 remote-management:
-  allow-remote: false
-  secret-key: ""
+  allow-remote: true
+  secret-key: "$2a$10$uUu0bxidPZSvmYr2zCWpQeRjf7fS4PnOIILTOr3yZhNkc/zBMDqJS"
   disable-control-panel: false
-
-auth-dir: "~/.cli-proxy-api"
-
+auth-dir: "/root/.cli-proxy-api"
 api-keys:
-  - "replace-with-a-long-random-api-key"
-
+  - cp-6LGc3WqyNIENAYRbanr59dbAHodCgnFV3SSF85W5YOI
 debug: false
 logging-to-file: false
 usage-statistics-enabled: true
 proxy-url: ""
-request-retry: 3
-
+request-retry: 1
 routing:
-  strategy: "round-robin"
+  strategy: "fill-first"
+commercial-mode: true
+codex-api-key:
+  - api-key: sk-Y5yKtPXLLhNQjPtRdfDPTSQDjUYp6DLEYxtPJBBqJvubIT3n
+    base-url: https://nowcoding.ai/v1
+    proxy-url: ""
+    models: []
+    websockets: true
+    priority: 101
+  - api-key: sk-d35dfffd33bd10d92d40c6991eadc996c7ed7e89514cfdd1d72aa07693e03293
+    priority: 102
+    base-url: https://sub.niucode.fun/v1
+    proxy-url: ""
+    models: []
+  - api-key: sk-s6celw3vi8llbbuc32qssy1e95mtzhyd
+    base-url: https://api.bankofai.io/v1
+    proxy-url: ""
+    models: []
+    excluded-models:
+      - "*"
+ws-auth: true
+max-retry-interval: 5
+redis-usage-queue-retention-seconds: 60
+
+remote-management:
+  panel-github-repository: "https://github.com/seakee/CPA-Manager"
